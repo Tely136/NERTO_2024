@@ -1,0 +1,63 @@
+clearvars; clc; close all;
+set(0, 'DefaultFigureWindowStyle', 'docked')
+
+table_path = '/mnt/disks/data-disk/NERTO_2024/files_table.mat';
+load(table_path);
+
+states = readgeotable('/mnt/disks/data-disk/NERTO_2024/shapefiles/cb_2023_us_state_500k/cb_2023_us_state_500k.shp');
+tracts = readgeotable('/mnt/disks/data-disk/NERTO_2024/shapefiles/cb_2023_24_tract_500k/cb_2023_24_tract_500k.shp');
+
+day = datetime(2024, 3, 25, 'TimeZone', 'UTC');
+day_table = files_table(files_table.Date>=day & files_table.Date<day+days(1),:);
+
+
+%%
+close all;
+
+bounds_lat = [38.5 40];
+bounds_lon = [-78 -75];
+
+figure;
+tiledlayout('flow');
+
+count = 0;
+scans = sort(unique(day_table.Scan));
+for i = scans'
+    scan_table = day_table(day_table.Scan==i, :);
+
+    hold on;
+
+    disp(['Plotting scan ', num2str(i), ' of ', num2str(max(day_table.Scan))])
+    usamap(bounds_lat, bounds_lon)
+    for j = min(scan_table.Granule):max(scan_table.Granule)
+
+        temp_file = scan_table(scan_table.Granule==j,:).Filename;
+
+        temp_lat = ncread(temp_file, '/geolocation/latitude');
+        temp_lon = ncread(temp_file, '/geolocation/longitude');
+        temp_sza = ncread(temp_file, '/geolocation/solar_zenith_angle');
+        temp_vza = ncread(temp_file, '/geolocation/viewing_zenith_angle');
+
+        temp_no2 = ncread(temp_file, 'product/vertical_column_troposphere');
+
+        surfm(temp_lat, temp_lon, temp_sza)
+        %geoshow(states,"DisplayType","polygon", 'FaceAlpha', 0);
+        %geoshow(tracts,"DisplayType","polygon", 'FaceAlpha', 0);
+
+    end
+
+    colorbar;
+    ax = gca;
+    ax.CLim = [0 100];
+    hold off
+
+    
+
+    count = count + 1;
+    if count >= 5
+        break
+    end
+
+    nexttile;
+    %break
+end
