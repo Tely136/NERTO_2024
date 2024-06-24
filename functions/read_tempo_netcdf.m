@@ -17,7 +17,7 @@ function tempo_data = read_tempo_netcdf(file, rows, cols)
             % Read the data from the netCDF file for the subgrid
             no2 = ncread(filename, '/product/vertical_column_troposphere', [start_row, start_col], [row_inc, col_inc]); % molec/cm^2
             lat = ncread(filename, '/geolocation/latitude', [start_row, start_col], [row_inc, col_inc]);
-            lon = ncread(filename, '/geolocation/longitude', [start_row, start_col], [row_inc + 1, col_inc]);
+            lon = ncread(filename, '/geolocation/longitude', [start_row, start_col], [row_inc, col_inc]);
             sza = ncread(filename, '/geolocation/solar_zenith_angle', [start_row, start_col], [row_inc, col_inc]);
             vza = ncread(filename, '/geolocation/viewing_zenith_angle', [start_row, start_col], [row_inc, col_inc]);
             qa = ncread(filename, '/product/main_data_quality_flag', [start_row, start_col], [row_inc, col_inc]);
@@ -37,7 +37,7 @@ function tempo_data = read_tempo_netcdf(file, rows, cols)
             rad = ncread(filename, '/band_290_490_nm/radiance', [1 start_row, start_col], [1028 row_inc, col_inc]);
             wl = ncread(filename, '/band_290_490_nm/nominal_wavelength', [1 start_row], [1028 row_inc]);
             lat = ncread(filename, '/band_290_490_nm/latitude', [start_row, start_col], [row_inc, col_inc]);
-            lon = ncread(filename, '/band_290_490_nm/longitude', [start_row, start_col], [row_inc + 1, col_inc]);
+            lon = ncread(filename, '/band_290_490_nm/longitude', [start_row, start_col], [row_inc, col_inc]);
             sza = ncread(filename, '/band_290_490_nm/solar_zenith_angle', [start_row, start_col], [row_inc, col_inc]);
             vza = ncread(filename, '/band_290_490_nm/viewing_zenith_angle', [start_row, start_col], [row_inc, col_inc]);
             time = ncread(filename, '/time', start_col, col_inc); 

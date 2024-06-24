@@ -15,7 +15,7 @@ function tropomi_data = read_tropomi_netcdf(file, rows, cols)
         case 'NO2'
             no2 = ncread(filename, '/PRODUCT/nitrogendioxide_tropospheric_column', [start_row, start_col 1], [row_inc, col_inc 1]); % molec/cm^2
             lat = ncread(filename, '/PRODUCT/latitude', [start_row, start_col 1], [row_inc, col_inc 1]);
-            lon = ncread(filename, '/PRODUCT/longitude', [start_row, start_col 1], [row_inc + 1, col_inc 1]);
+            lon = ncread(filename, '/PRODUCT/longitude', [start_row, start_col 1], [row_inc, col_inc 1]);
             sza = ncread(filename, '/PRODUCT/SUPPORT_DATA/GEOLOCATIONS/solar_zenith_angle', [start_row, start_col 1], [row_inc, col_inc 1]);
             vza = ncread(filename, '/PRODUCT/SUPPORT_DATA/GEOLOCATIONS/viewing_zenith_angle', [start_row, start_col 1], [row_inc, col_inc 1]);
             qa = ncread(filename, '/PRODUCT/qa_value', [start_row, start_col 1], [row_inc, col_inc 1]);

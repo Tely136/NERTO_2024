@@ -8,7 +8,7 @@ load(tropomi_rad_table_path);
 save_path = '/mnt/disks/data-disk/figures/radiance';
 conversion_factor = 6.022 .* 10.^19; % convert from mol/s/m^2/nm/sr to ph/s/cm^2/nm/sr
 
-baltimore_lat = 39.3; baltimore_lon = -76.6;
+baltimore_lat = 40.9; baltimore_lon = -76.9;
 
 day = 13;
 month = 5;
@@ -46,6 +46,8 @@ tempo_qa = tempo_no2_data.qa;
 
 tempo_rad = tempo_rad_data.rad;
 tempo_wl = tempo_rad_data.wl;
+tempo_lat = tempo_rad_data.lat;
+tempo_lon = tempo_rad_data.lon;
 tempo_sza = tempo_rad_data.sza;
 tempo_vza = tempo_rad_data.vza;
 tempo_time = tempo_rad_data.time;
@@ -64,6 +66,8 @@ tropomi_qa = tropomi_no2_data.qa;
 
 tropomi_rad = tropomi_rad_data.rad;
 tropomi_wl = tropomi_rad_data.wl;
+tropomi_lat = tropomi_rad_data.lat;
+tropomi_lon = tropomi_rad_data.lon;
 tropomi_sza = tropomi_rad_data.sza;
 tropomi_vza = tropomi_rad_data.vza;
 tropomi_time = tropomi_rad_data.time;
@@ -74,9 +78,14 @@ tropomi_r = pi * tropomi_rad ./ (cosd(tropomi_sza) .* tropomi_irrad);
 
 
 %%
+disp(['TEMPO lat,lon at location: ', num2str(tempo_lat), ', ', num2str(tempo_lon)])
+disp(['TROPOMI lat,lon at location: ', num2str(tropomi_lat), ', ', num2str(tropomi_lon)])
+
 disp(['TEMPO QA at location: ', num2str(tempo_qa)])
 disp(['TROPOMI QA at location: ', num2str(tropomi_qa)])
 
+disp(['TEMPO VZA at location: ', num2str(tempo_vza)])
+disp(['TROPOMI VZA at location: ', num2str(tropomi_vza)])
 
 disp(['TEMPO time at location: ', char(datetime(tempo_time, 'TimeZone', plot_timezone))])
 disp(['TROPOMI time at location: ', char(datetime(tropomi_time, 'TimeZone', plot_timezone))])

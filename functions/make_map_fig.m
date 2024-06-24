@@ -1,5 +1,15 @@
-function make_map_fig(lat, lon, param, lat_bounds, lon_bounds, fullpath,  title_str)
+function make_map_fig(lat, lon, param, lat_bounds, lon_bounds, fullpath,  title_str, markers)
 
+    arguments
+        lat
+        lon 
+        param
+        lat_bounds
+        lon_bounds
+        fullpath
+        title_str
+        markers = []
+    end
     % lw = 2;
     font_size = 20;
     resolution = 300;
@@ -21,6 +31,10 @@ function make_map_fig(lat, lon, param, lat_bounds, lon_bounds, fullpath,  title_
 
     surfm(lat, lon, param)
     geoshow(states_low_res, "DisplayType", "polygon", 'FaceAlpha', 0);
+
+    if ~isempty(markers)
+        scatterm(markers.lat, markers.lon) 
+    end
     hold off;
 
     ax = gca;
