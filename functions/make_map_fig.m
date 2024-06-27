@@ -1,5 +1,4 @@
-function make_map_fig(lat, lon, param, lat_bounds, lon_bounds, fullpath,  title_str, markers)
-
+function make_map_fig(lat, lon, param, lat_bounds, lon_bounds, fullpath,  title_str, clim, markers)
     arguments
         lat
         lon 
@@ -8,8 +7,10 @@ function make_map_fig(lat, lon, param, lat_bounds, lon_bounds, fullpath,  title_
         lon_bounds
         fullpath
         title_str
+        clim = []
         markers = []
     end
+
     % lw = 2;
     font_size = 20;
     resolution = 300;
@@ -40,7 +41,11 @@ function make_map_fig(lat, lon, param, lat_bounds, lon_bounds, fullpath,  title_
     ax = gca;
     % setm(ax, 'Frame', 'off', 'Grid', 'off', 'ParallelLabel', 'off', 'MeridianLabel', 'off')
     colorbar
-    % ax.CLim = color_lim;
+    colormap('jet')
+
+    if ~isempty(clim)
+        ax.CLim = clim;
+    end
 
     title(title_str)
     fontsize(font_size, 'points')

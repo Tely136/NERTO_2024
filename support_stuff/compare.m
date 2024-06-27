@@ -5,7 +5,7 @@ tropomi_rad_table_path = '/mnt/disks/data-disk/NERTO_2024/tropomi_files_table.ma
 load(tempo_rad_table_path);
 load(tropomi_rad_table_path);
 
-save_path = '/mnt/disks/data-disk/figures/angles';
+% update this based on tropomi documentation
 conversion_factor = 6.022 .* 10.^19; % convert from mol/s/m^2/nm/sr to ph/s/cm^2/nm/sr
 
 day = 13;
@@ -42,26 +42,31 @@ lon_bounds = [-93 -53];
 [rows, cols] = get_indices(tropomi_no2_table, lat_bounds, lon_bounds);
 trop_no2_data = read_tropomi_netcdf(tropomi_no2_table, rows, cols);
 trop_datetime = tropomi_no2_table.Date;
+trop_no2 = trop_no2_data.no2;
+trop_no2_u = trop_no2_data.no2_u;
 trop_lat = trop_no2_data.lat;
 trop_lon = trop_no2_data.lon;
 trop_sza = trop_no2_data.sza;
 trop_vza = trop_no2_data.vza;
 trop_qa = trop_no2_data.qa;
 
-trop_sza_interp = griddata(trop_lat(:), trop_lon(:), trop_sza(:), lat_grid, lon_grid);
-trop_vza_interp = griddata(trop_lat(:), trop_lon(:), trop_vza(:), lat_grid, lon_grid);
+trop_sza_interp = griddata(trop_lat(:), trop_lon(:), trop_sza(:), lat_grid, lon_grid, "nearest");
+trop_vza_interp = griddata(trop_lat(:), trop_lon(:), trop_vza(:), lat_grid, lon_grid, "nearest");
 
 [rows, cols] = get_indices(tempo_no2_table, lat_bounds, lon_bounds);
 tempo_no2_data = read_tempo_netcdf(tempo_no2_table, rows, cols);
 tempo_datetime = tempo_no2_table.Date;
+
+tempo_no2 = tempo_no2_data.no2;
+tempo_no2_u = tempo_no2_data.no2_u;
 tempo_lat = tempo_no2_data.lat;
 tempo_lon = tempo_no2_data.lon;
 tempo_sza = tempo_no2_data.sza;
 tempo_vza = tempo_no2_data.vza;
 tempo_qa = tempo_no2_data.qa;
 
-tempo_sza_interp = griddata(tempo_lat(:), tempo_lon(:), tempo_sza(:), lat_grid, lon_grid);
-tempo_vza_interp = griddata(tempo_lat(:), tempo_lon(:), tempo_vza(:), lat_grid, lon_grid);
+tempo_sza_interp = griddata(tempo_lat(:), tempo_lon(:), tempo_sza(:), lat_grid, lon_grid, "nearest");
+tempo_vza_interp = griddata(tempo_lat(:), tempo_lon(:), tempo_vza(:), lat_grid, lon_grid, "nearest");
 
 % Find the coordinate in original data closest to min viewing difference with high QA
 % plot radiance, irradiance, and reflectance at that point
@@ -77,7 +82,14 @@ marker.lon = lon_grid(vza_min_index);
 % make_map_fig(lat_grid, lon_grid, tempo_vza_interp, lat_bounds, lon_bounds, fullfile(save_path, 'test2'), string(datetime(tempo_datetime, 'TimeZone', plot_timezone)))
 % make_map_fig(lat_grid, lon_grid, vza_diff, lat_bounds, lon_bounds, fullfile(save_path, 'test3'), string(datetime(tempo_datetime, 'TimeZone', plot_timezone)), marker)
 
+save_path = '/mnt/disks/data-disk/figures/comparison';
 
+clim = [0 10^16];
+make_map_fig(tempo_lat, tempo_lon, tempo_no2_u, lat_bounds, lon_bounds, fullfile(save_path, 'tempo uncertainty'), string(datetime(tempo_datetime, 'TimeZone', plot_timezone)), clim)
+make_map_fig(trop_lat, trop_lon, trop_no2_u, lat_bounds, lon_bounds, fullfile(save_path, 'tropomi uncertainty'), string(datetime(trop_datetime, 'TimeZone', plot_timezone)), clim)
 
+clim = [0 10^16];
+make_map_fig(tempo_lat, tempo_lon, tempo_no2, lat_bounds, lon_bounds, fullfile(save_path, 'tempo no2'), string(datetime(tempo_datetime, 'TimeZone', plot_timezone)), clim)
+make_map_fig(trop_lat, trop_lon, trop_no2, lat_bounds, lon_bounds, fullfile(save_path, 'tropomi no2'), string(datetime(trop_datetime, 'TimeZone', plot_timezone)), clim)
 
 

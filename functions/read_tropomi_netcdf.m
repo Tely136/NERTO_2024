@@ -13,7 +13,8 @@ function tropomi_data = read_tropomi_netcdf(file, rows, cols)
     tropomi_data = struct;
     switch product
         case 'NO2'
-            no2 = ncread(filename, '/PRODUCT/nitrogendioxide_tropospheric_column', [start_row, start_col 1], [row_inc, col_inc 1]); % molec/cm^2
+            no2 = ncread(filename, '/PRODUCT/nitrogendioxide_tropospheric_column', [start_row, start_col 1], [row_inc, col_inc 1]) .* conversion_factor;
+            no2_u = ncread(filename, '/PRODUCT/nitrogendioxide_tropospheric_column_precision', [start_row, start_col 1], [row_inc, col_inc 1]) .* conversion_factor; % precision
             lat = ncread(filename, '/PRODUCT/latitude', [start_row, start_col 1], [row_inc, col_inc 1]);
             lon = ncread(filename, '/PRODUCT/longitude', [start_row, start_col 1], [row_inc, col_inc 1]);
             sza = ncread(filename, '/PRODUCT/SUPPORT_DATA/GEOLOCATIONS/solar_zenith_angle', [start_row, start_col 1], [row_inc, col_inc 1]);
@@ -23,6 +24,7 @@ function tropomi_data = read_tropomi_netcdf(file, rows, cols)
             time = datetime(time, 'InputFormat', 'yyyy-MM-dd''T''HH:mm:ss.SSSSSS''Z''', 'TimeZone', 'UTC');
 
             tropomi_data.no2 = no2;
+            tropomi_data.no2_u = no2_u;
             tropomi_data.lat = lat;
             tropomi_data.lon = lon;
             tropomi_data.sza = sza;
