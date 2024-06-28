@@ -1,7 +1,6 @@
-function create_and_save_fig(x_data, y_data, path, name, ttext, leg, xtext, ytext, xbound, ybound, dim)
+function create_and_save_fig_bar(data, path, name, ttext, leg, xtext, ytext, xbound, ybound, dim)
     arguments
-        x_data
-        y_data
+        data
         path
         name
         ttext = []
@@ -14,7 +13,6 @@ function create_and_save_fig(x_data, y_data, path, name, ttext, leg, xtext, ytex
     end
 
 
-    lw = 2;
     font_size = 20;
     resolution = 300;
 
@@ -25,11 +23,10 @@ function create_and_save_fig(x_data, y_data, path, name, ttext, leg, xtext, ytex
     fig = figure('Visible', 'off', 'Position', dim);
 
     hold on;
-    for i = 1:size(x_data,2)
-        temp_x = x_data(:,i);
-        temp_y = y_data(:,i);
+    for i = 1:size(data,2)
+        temp_data = data(:,i);
 
-        plot(temp_x, temp_y, 'LineWidth', lw)
+        bar(temp_data)
     end
     hold off;
 
@@ -42,7 +39,7 @@ function create_and_save_fig(x_data, y_data, path, name, ttext, leg, xtext, ytex
     end
 
     if ~isempty(leg)
-        legend(leg, 'Location', 'southwest')
+        legend(leg, 'Location', 'best')
     end
     
     if ~isempty(ttext)

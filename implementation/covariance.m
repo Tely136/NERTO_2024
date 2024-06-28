@@ -13,11 +13,14 @@ plot_timezone = 'America/New_York';
 day_tz = datetime(year, month, day, 'TimeZone', plot_timezone);
 day_utc = datetime(year, month, day, 'TimeZone', 'UTC');
 
-lat_bounds = [38 40];
+lat_bounds = [38 40]; % maryland
 lon_bounds = [-78, -76];
 
+% lat_bounds = [36 42]; % larger area
+% lon_bounds = [-79, -75];
+
 time_window = minutes(30);
-L = 10; % correlation length in km
+L = 30; % correlation length in km
 
 tempo_no2_table = tempo_files_table(strcmp(tempo_files_table.Product, 'NO2') & tempo_files_table.Date >= day_tz & tempo_files_table.Date < day_tz + days(1), :);
 tropomi_no2_table = tropomi_files_table(strcmp(tropomi_files_table.Product, 'NO2') & tropomi_files_table.Date >= day_tz & tropomi_files_table.Date < day_tz + days(1), :);
@@ -63,7 +66,7 @@ for i = 1:size(tropomi_no2_table,1)
 
                 % Check if tempo file is within time window of tropomi, otherwise skip tempo file
                 if abs(tempo_time_avg - trop_time_avg) <= time_window
-                    disp('Merging file')
+                    disp(strjoin(['Merging file:', tempo_temp.Filename]))
 
                     tempo_no2 = tempo_temp_data.no2;
                     tempo_dim = size(tempo_no2);
@@ -84,7 +87,7 @@ for i = 1:size(tropomi_no2_table,1)
                     dij = deg2km(dij);
 
                     % Correlation matrix 
-                    C = exp((-dij.^2)./(2*L^2));
+                    C = gaspari_cohn(dij./L);
 
                     % Background (Tempo) error covariance function
                     Pb = sqrt(D)' * C * sqrt(D);
@@ -134,59 +137,53 @@ function comparison_figure(bg_lat, bg_lon, xb, obs_lat, obs_lon, xo, xa, bg_dim,
     font_size = 20;
     resolution = 300;
     dim = [0, 0, 1200, 300];
-    clim = [0 10^16];
+    % clim = [0 10^16];
+    clim = [min([xb(:); xo(:); xa(:)]), max([xb(:); xo(:); xa(:)])];
 
     states_low_res = readgeotable("usastatehi.shp");
     save_path = '/mnt/disks/data-disk/figures';
 
     fig1_savename = 'comparison_result';
     fig1 = figure('Visible','off', 'Position', dim);
-    tiledlayout(1,3)
+    tiledlayout(1,3, "TileSpacing", "none", "Padding", "compact");
     sgtitle(string(time))
 
-    % map_input = 'MD';
 
-    nexttile
-    % usamap(lat_bounds, lon_bounds);
-    usamap('MD');
-    hold on;
-    surfm(bg_lat, bg_lon, xb)
+    % First tile for TEMPO data
+    ax1 = nexttile;
+    usamap(lat_bounds, lon_bounds);
+    surfm(bg_lat, bg_lon, xb);
     geoshow(states_low_res, "DisplayType", "polygon", 'FaceAlpha', 0);
-    hold off;
-    fontsize(font_size, 'points')
-    title('TEMPO')
-    ax = gca;
-    ax.CLim = clim;
-    % setm(ax, 'Frame', 'off', 'Grid', 'off', 'ParallelLabel', 'off', 'MeridianLabel', 'off')
+    fontsize(font_size, 'points');
+    title('TEMPO');
+    ax1.CLim = clim;
+    setm(ax1, 'Frame', 'off', 'Grid', 'off', 'ParallelLabel', 'off', 'MeridianLabel', 'off');
 
-    nexttile
-    % usamap(lat_bounds, lon_bounds);
-    usamap('MD');
-    hold on;
-    surfm(obs_lat, obs_lon, xo)
+    % Second tile for TROPOMI data
+    ax2 = nexttile;
+    usamap(lat_bounds, lon_bounds);
+    surfm(obs_lat, obs_lon, xo);
     geoshow(states_low_res, "DisplayType", "polygon", 'FaceAlpha', 0);
-    hold off;
-    fontsize(font_size, 'points')
-    title('TROPOMI')
-    ax = gca;
-    ax.CLim = clim;
-    % setm(ax, 'Frame', 'off', 'Grid', 'off', 'ParallelLabel', 'off', 'MeridianLabel', 'off')
+    fontsize(font_size, 'points');
+    title('TROPOMI');
+    ax2.CLim = clim;
+    setm(ax2, 'Frame', 'off', 'Grid', 'off', 'ParallelLabel', 'off', 'MeridianLabel', 'off');
 
-    nexttile
-    % usamap(lat_bounds, lon_bounds);
-    usamap('MD');
-    hold on;
-    surfm(bg_lat, bg_lon, xa)
+    % Third tile for Merged data
+    ax3 = nexttile;
+    usamap(lat_bounds, lon_bounds);
+    surfm(bg_lat, bg_lon, xa);
     geoshow(states_low_res, "DisplayType", "polygon", 'FaceAlpha', 0);
-    hold off;
-    fontsize(font_size, 'points')
-    title('Merged')
-    ax = gca;
-    ax.CLim = clim;
-    % setm(ax, 'Frame', 'off', 'Grid', 'off', 'ParallelLabel', 'off', 'MeridianLabel', 'off')
+    fontsize(font_size, 'points');
+    title('Merged');
+    ax3.CLim = clim;
+    setm(ax3, 'Frame', 'off', 'Grid', 'off', 'ParallelLabel', 'off', 'MeridianLabel', 'off');
 
+    % Add colorbar
     cb = colorbar;
     cb.Layout.Tile = 'east';
+
+    colormap('jet')
 
     fullpath = fullfile(save_path, fig1_savename);
     print(fig1, fullpath, '-dpng', ['-r' num2str(resolution)])
