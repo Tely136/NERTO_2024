@@ -7,16 +7,16 @@ load(tropomi_rad_table_path);
 
 load('USA.mat');
 
-day = 13;
-month = 5;
+day = 25;
+month = 3;
 year = 2024;
 
 plot_timezone = 'America/New_York';
 day_tz = datetime(year, month, day, 'TimeZone', plot_timezone);
 day_utc = datetime(year, month, day, 'TimeZone', 'UTC');
 
-lat_bounds = [39.5 40];
-lon_bounds = [-76.5, -76];
+lat_bounds = [40.2 41.74];
+lon_bounds = [-74.5, -71.9];
 
 tropomi_filename = "/mnt/disks/data-disk/data/tropomi_data/S5P_OFFL_L2__NO2____20240513T163121_20240513T181252_34111_03_020600_20240515T094133.nc";
 tempo_filename = "/mnt/disks/data-disk/data/tempo_data/TEMPO_NO2_L2_V03_20240513T171448Z_S009G03.nc";
@@ -36,6 +36,7 @@ trop_lon = tropomi_temp_data.lon(:);
 trop_no2_u = tropomi_temp_data.no2_u(:);
 trop_qa = tropomi_temp_data.qa(:);
 trop_time = tropomi_temp_data.time;
+trop_time_avg = mean(trop_time);
 
 % Load Tempo data in lat and lon bounds
 disp('Loading TEMPO data')
@@ -48,6 +49,7 @@ tempo_lon = tempo_temp_data.lon(:);
 tempo_no2_u = tempo_temp_data.no2_u(:);
 tempo_qa = tempo_temp_data.qa(:);
 tempo_time = tempo_temp_data.time;
+tempo_time_avg = mean(tempo_time);
 
 % Number of Tropomi and Tempo values
 n_tropomi = length(trop_no2);
@@ -99,6 +101,12 @@ Xa = tempo_no2 + K * innovation;
 % Analysis Error Covariance
 Pa = (eye(length(Xa)) - K*H) * Pb;
 
+% Compare background and analysis variances
+diag_Pb = diag(Pb);
+diag_Pa = diag(Pa);
+
+u_reduction = diag_Pb - diag_Pa;
+
 tempo_no2_interp = H * tempo_no2;
 tempo_no2_interp_plt = reshape(tempo_no2_interp, trop_dim);
 
@@ -110,10 +118,16 @@ trop_no2_plt = reshape(trop_no2, trop_dim);
 trop_lat_plt = reshape(trop_lat, trop_dim);
 trop_lon_plt = reshape(trop_lon, trop_dim);
 
+analysis_no2_plt = reshape(Xa, tempo_dim);
+
+
 %% Plots
 disp('Producing figures')
 
 save_path = '/mnt/disks/data-disk/figures/testing';
+
+test_lengths = unique(dij(:));
+test_c = gaspari_cohn(test_lengths./L);
 
 clim_no2 = [0 10^16];
 clim_no2_u = [0 10^16];
@@ -125,18 +139,77 @@ matrix_image(Pb, 'Background Covariance Matrix', fullfile(save_path, 'Pb'), 'hot
 matrix_image(H, 'Observation Transformation Matrix', fullfile(save_path, 'H'), 'gray') % Observation transformation operator
 matrix_image(S, 'Innovation Covariance Matrix', fullfile(save_path, 'S'), 'hot', clim_no2_u) % Innovation covariance matrix
 matrix_image(K, 'Kalman Gain Matrix', fullfile(save_path, 'K'), USA, [-.5 .5]) % Determines weight of the innovation
-matrix_image(Pa, 'Analysis Error Covariance', fullfile(save_path, 'Pa'), USA, [-.5 .5]) % Analysis error covariance
+matrix_image(Pa, 'Analysis Error Covariance', fullfile(save_path, 'Pa'), 'hot') % Analysis error covariance
 
-
-test_lengths = unique(dij(:));
-test_c = gaspari_cohn(test_lengths./L);
+create_and_save_fig_bar([diag_Pb diag_Pa], save_path, 'uncertainty_before_after', 'Variance', {'Background', 'Analysis'})
 create_and_save_fig(test_lengths, gaspari_cohn(test_lengths./L), save_path, 'correlation_function', 'Correlation Function', '', 'Distance (km)')
 
-% make_map_fig(trop_lat_plt, trop_lon_plt, trop_no2_plt, lat_bounds, lon_bounds, fullfile(save_path, 'tropno2_orig'), 'TROPOMI NO2', clim_no2_u)
-% make_map_fig(tempo_lat_plt, tempo_lon_plt, tempo_no2_plt, lat_bounds, lon_bounds, fullfile(save_path, 'tempono2_orig'), 'TEMPO NO2', clim_no2_u)
-% make_map_fig(trop_lat_plt, trop_lon_plt, tempo_no2_interp_plt, lat_bounds, lon_bounds, fullfile(save_path, 'tempono2_interp'), 'Interpolated TEMPO NO2', clim_no2_u)
+make_map_fig(trop_lat_plt, trop_lon_plt, trop_no2_plt, lat_bounds, lon_bounds, fullfile(save_path, 'tropno2_orig'), 'TROPOMI NO2', clim_no2_u)
+make_map_fig(tempo_lat_plt, tempo_lon_plt, tempo_no2_plt, lat_bounds, lon_bounds, fullfile(save_path, 'tempono2_orig'), 'TEMPO NO2', clim_no2_u)
+make_map_fig(trop_lat_plt, trop_lon_plt, tempo_no2_interp_plt, lat_bounds, lon_bounds, fullfile(save_path, 'tempono2_interp'), 'Interpolated TEMPO NO2', clim_no2_u)
+
+comparison_figure(tempo_lat_plt, tempo_lon_plt, tempo_no2_plt, trop_lat_plt, trop_lon_plt, trop_no2_plt, analysis_no2_plt, lat_bounds, lon_bounds, tempo_time_avg, trop_time_avg)
 
 
+%% Functions 
 
-%% Functions
+
+function comparison_figure(bg_lat, bg_lon, xb, obs_lat, obs_lon, xo, xa, lat_bounds, lon_bounds, bg_time, obs_time)
+
+    font_size = 20;
+    resolution = 300;
+    dim = [0, 0, 1200, 300];
+    % clim = [0 10^16];
+    clim = [min([xb(:); xo(:); xa(:)]), max([xb(:); xo(:); xa(:)])];
+
+    states_low_res = readgeotable("usastatehi.shp");
+    save_path = '/mnt/disks/data-disk/figures/testing';
+
+    fig1_savename = 'comparison_result';
+    fig1 = figure('Visible','off', 'Position', dim);
+    tiledlayout(1,3, "TileSpacing", "none", "Padding", "compact");
+
+
+    % First tile for TEMPO data
+    ax1 = nexttile;
+    usamap(lat_bounds, lon_bounds);
+    surfm(bg_lat, bg_lon, xb);
+    geoshow(states_low_res, "DisplayType", "polygon", 'FaceAlpha', 0);
+    fontsize(font_size, 'points');
+    title(['TEMPO ', string(bg_time)]);
+    ax1.CLim = clim;
+    setm(ax1, 'Frame', 'off', 'Grid', 'off', 'ParallelLabel', 'off', 'MeridianLabel', 'off');
+
+    % Second tile for TROPOMI data
+    ax2 = nexttile;
+    usamap(lat_bounds, lon_bounds);
+    surfm(obs_lat, obs_lon, xo);
+    geoshow(states_low_res, "DisplayType", "polygon", 'FaceAlpha', 0);
+    fontsize(font_size, 'points');
+    title(['TROPOMI ', string(obs_time)]);
+    ax2.CLim = clim;
+    setm(ax2, 'Frame', 'off', 'Grid', 'off', 'ParallelLabel', 'off', 'MeridianLabel', 'off');
+
+    % Third tile for Merged data
+    ax3 = nexttile;
+    usamap(lat_bounds, lon_bounds);
+    surfm(bg_lat, bg_lon, xa);
+    geoshow(states_low_res, "DisplayType", "polygon", 'FaceAlpha', 0);
+    fontsize(font_size, 'points');
+    title('Preliminary Merged Result');
+    ax3.CLim = clim;
+    setm(ax3, 'Frame', 'off', 'Grid', 'off', 'ParallelLabel', 'off', 'MeridianLabel', 'off');
+
+    % Add colorbar
+    cb = colorbar;
+    cb.Layout.Tile = 'east';
+
+    colormap('jet')
+
+    fullpath = fullfile(save_path, fig1_savename);
+    print(fig1, fullpath, '-dpng', ['-r' num2str(resolution)])
+    close(fig1);
+end
+
+
 

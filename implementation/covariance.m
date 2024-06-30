@@ -1,9 +1,9 @@
 clearvars; clc; close all;
 
-tempo_rad_table_path = '/mnt/disks/data-disk/NERTO_2024/tempo_files_table.mat';
-tropomi_rad_table_path = '/mnt/disks/data-disk/NERTO_2024/tropomi_files_table.mat';
-load(tempo_rad_table_path);
-load(tropomi_rad_table_path);
+tempo_table_path = '/mnt/disks/data-disk/NERTO_2024/tempo_files_table.mat';
+tropomi_table_path = '/mnt/disks/data-disk/NERTO_2024/tropomi_files_table.mat';
+load(tempo_table_path);
+load(tropomi_table_path);
 
 day = 13;
 month = 5;
