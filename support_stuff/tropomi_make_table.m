@@ -1,16 +1,22 @@
 clearvars; clc; close all;
 
 data_path = '/mnt/disks/data-disk/data/tropomi_data/';
+save_path = '/mnt/disks/data-disk/data/';
+fullpath = fullfile(save_path, 'satellite_files_table.mat');
 
 L1_files = dir(fullfile(data_path, '*L1*.nc'));
 L2_files = dir(fullfile(data_path, '*L2*.nc'));
 
 files = [L1_files; L2_files];
 
-varnames = {'Filename', 'Product', 'Level', 'Date', 'Version', 'Scan', 'Granule'};
-vartypes = {'string', 'string', 'double', 'datetime', 'double', 'double', 'double'};
-tropomi_files_table = table('Size', [0, length(vartypes)], 'VariableTypes', vartypes, 'VariableNames', varnames);
-tropomi_files_table.Date.TimeZone = 'UTC';
+if exist(fullpath, "file")
+    load(fullpath);
+else
+    varnames = {'Filename', 'Product', 'Level', 'Date', 'Version', 'Scan', 'Granule'};
+    vartypes = {'string', 'string', 'double', 'datetime', 'double', 'double', 'double'};
+    files_table = table('Size', [0, length(vartypes)], 'VariableTypes', vartypes, 'VariableNames', varnames);
+    files_table.Date.TimeZone = 'UTC';
+end
 
 for i = 1:length(files)
     temp_name = files(i).name;
@@ -41,8 +47,8 @@ for i = 1:length(files)
     temp_table = table(temp_path, temp_product, temp_level, temp_date,...
                        temp_version, temp_scan, temp_granule, 'VariableNames', varnames);
 
-    tropomi_files_table = [tropomi_files_table; temp_table];
+    files_table = [files_table; temp_table];
 
 end
 
-save('/mnt/disks/data-disk/NERTO_2024/tropomi_files_table.mat', "tropomi_files_table");
+save(fullpath, "files_table");

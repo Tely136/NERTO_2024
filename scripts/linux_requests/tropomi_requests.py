@@ -26,9 +26,9 @@ products = {
 version = '2'
 
 # Define the bounding box for the area of interest
-lat_min = 39
+lat_min = 37
 lat_max = 44
-lon_min = -77
+lon_min = -78
 lon_max = -70
 bbox = (lon_min, lat_min, lon_max, lat_max)
 

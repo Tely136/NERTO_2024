@@ -1,14 +1,21 @@
 clearvars; clc; close all;
 
-data_path = '/mnt/disks/data-disk/data/tempo_data/';
+data_path = '/mnt/disks/data-disk/data/tempo_data';
+save_path = '/mnt/disks/data-disk/data';
+fullpath = fullfile(save_path, 'satellite_files_table.mat');
+
 
 L1_files = dir(fullfile(data_path, '*L1*.nc'));
 L2_files = dir(fullfile(data_path, '*L2*.nc'));
-
 varnames = {'Filename', 'Product', 'Level', 'Date', 'Version', 'Scan', 'Granule'};
 vartypes = {'string', 'string', 'double', 'datetime', 'double', 'double', 'double'};
-tempo_files_table = table('Size', [0, length(vartypes)], 'VariableTypes',vartypes, 'VariableNames', varnames);
-tempo_files_table.Date.TimeZone = 'UTC';
+
+if exist(fullpath, "file")
+    load(fullpath);
+else
+    files_table = table('Size', [0, length(vartypes)], 'VariableTypes',vartypes, 'VariableNames', varnames);
+    files_table.Date.TimeZone = 'UTC';
+end
 
 for i = 1:length(L1_files)
     temp_name = L1_files(i).name;
@@ -32,7 +39,7 @@ for i = 1:length(L1_files)
     temp_table = table(temp_path, temp_product, temp_level, temp_date,...
                        temp_version, temp_scan, temp_granule, 'VariableNames', varnames);
 
-    tempo_files_table = [tempo_files_table; temp_table];
+    files_table = [files_table; temp_table];
 end
 
 for i = 1:length(L2_files)
@@ -52,7 +59,8 @@ for i = 1:length(L2_files)
     temp_table = table(temp_path, temp_product, temp_level, temp_date,...
                        temp_version, temp_scan, temp_granule, 'VariableNames', varnames);
 
-    tempo_files_table = [tempo_files_table; temp_table];
+    files_table = [files_table; temp_table];
 end
 
-save('/mnt/disks/data-disk/NERTO_2024/tempo_files_table.mat', "tempo_files_table");
+% save('/mnt/disks/data-disk/NERTO_2024/tempo_files_table.mat', "tempo_files_table");
+save(fullpath, "files_table");

@@ -4,8 +4,8 @@ from pathlib import Path
 from datetime import datetime, timedelta
 
 # Define the start and end dates for the range
-start_date = '2024-05-13'
-end_date = '2024-06-15'
+start_date = '2024-06-01'
+end_date = '2024-07-01'
 
 # Convert to datetime objects
 start_date = datetime.strptime(start_date, '%Y-%m-%d')
@@ -35,8 +35,8 @@ bbox = (lon_min, lat_min, lon_max, lat_max)
 # Function to create UTC time range for TROPOMI overpass window with margin
 def create_temporal_range_for_tropomi(date):
     # Define the time window in UTC
-    start_time_utc = datetime.strptime(f"{date} 16:00:00", '%Y-%m-%d %H:%M:%S')
-    end_time_utc = datetime.strptime(f"{date} 19:00:00", '%Y-%m-%d %H:%M:%S')
+    start_time_utc = datetime.strptime(f"{date} 0:00:00", '%Y-%m-%d %H:%M:%S')
+    end_time_utc = datetime.strptime(f"{date} 23:00:00", '%Y-%m-%d %H:%M:%S')
     
     return start_time_utc.strftime('%Y-%m-%dT%H:%M:%S'), end_time_utc.strftime('%Y-%m-%dT%H:%M:%S')
 

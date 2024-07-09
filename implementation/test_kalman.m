@@ -7,16 +7,12 @@ load(tropomi_rad_table_path);
 
 load('USA.mat');
 
-day = 25;
-month = 3;
-year = 2024;
-
 plot_timezone = 'America/New_York';
 day_tz = datetime(year, month, day, 'TimeZone', plot_timezone);
 day_utc = datetime(year, month, day, 'TimeZone', 'UTC');
 
-lat_bounds = [40.2 41.74];
-lon_bounds = [-74.5, -71.9];
+lat_bounds = [40 40.5];
+lon_bounds = [-76.5, -76];
 
 tropomi_filename = "/mnt/disks/data-disk/data/tropomi_data/S5P_OFFL_L2__NO2____20240513T163121_20240513T181252_34111_03_020600_20240515T094133.nc";
 tempo_filename = "/mnt/disks/data-disk/data/tempo_data/TEMPO_NO2_L2_V03_20240513T171448Z_S009G03.nc";
@@ -140,7 +136,6 @@ matrix_image(H, 'Observation Transformation Matrix', fullfile(save_path, 'H'), '
 matrix_image(S, 'Innovation Covariance Matrix', fullfile(save_path, 'S'), 'hot', clim_no2_u) % Innovation covariance matrix
 matrix_image(K, 'Kalman Gain Matrix', fullfile(save_path, 'K'), USA, [-.5 .5]) % Determines weight of the innovation
 matrix_image(Pa, 'Analysis Error Covariance', fullfile(save_path, 'Pa'), 'hot') % Analysis error covariance
-
 create_and_save_fig_bar([diag_Pb diag_Pa], save_path, 'uncertainty_before_after', 'Variance', {'Background', 'Analysis'})
 create_and_save_fig(test_lengths, gaspari_cohn(test_lengths./L), save_path, 'correlation_function', 'Correlation Function', '', 'Distance (km)')
 
@@ -156,7 +151,7 @@ comparison_figure(tempo_lat_plt, tempo_lon_plt, tempo_no2_plt, trop_lat_plt, tro
 
 function comparison_figure(bg_lat, bg_lon, xb, obs_lat, obs_lon, xo, xa, lat_bounds, lon_bounds, bg_time, obs_time)
 
-    font_size = 20;
+    font_size = 16;
     resolution = 300;
     dim = [0, 0, 1200, 300];
     % clim = [0 10^16];
