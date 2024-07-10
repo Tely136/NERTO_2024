@@ -1,15 +1,29 @@
 function tempo_data = read_tempo_netcdf(file, rows, cols)
+    arguments
+        file
+        rows = [];
+        cols = []
+    end
 
     % conversion_factor = 6.022 .* 10.^19; % convert from mol/s/m^2/nm/sr to ph/s/cm^2/nm/sr
 
     filename = file.Filename;
     product = file.Product;
 
-    start_row = rows(1);
-    start_col = cols(1);
+    if isempty(rows) & isempty(cols)
+        % load all
+        start_row = 1;
+        start_col = 1;
 
-    row_inc = rows(2) - rows(1) + 1;
-    col_inc = cols(2) - cols(1) + 1;
+        row_inc = 2048;
+        col_inc = 131;
+    else
+        start_row = rows(1);
+        start_col = cols(1);
+
+        row_inc = rows(2) - rows(1) + 1;
+        col_inc = cols(2) - cols(1) + 1;
+    end
 
     tempo_data = struct;
     switch product

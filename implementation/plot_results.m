@@ -6,11 +6,12 @@ scan = 9;
 
 files = dir(fullfile(results_path,'*.mat'));
 
-% lat_bounds = [38 40]; % maryland
-% lon_bounds = [-78, -76];
 
-lat_bounds = [40 42]; % new york
-lon_bounds = [-75, -72];
+% lat_bounds = [40 42]; % new york
+% lon_bounds = [-75, -72];
+
+lat_bounds = [39 40];
+lon_bounds = [-77 -76];
 
 day = 20;
 month = 5;
