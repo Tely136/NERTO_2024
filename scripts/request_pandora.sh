@@ -14,6 +14,8 @@ wget -O /mnt/disks/data-disk/data/pandora_data/pandora_greenbelt2.txt https://da
 
 wget -O /mnt/disks/data-disk/data/pandora_data/pandora_greenbelt32.txt https://data.pandonia-global-network.org/GreenbeltMD/Pandora32s1/L2/Pandora32s1_GreenbeltMD_L2_rnvh3p1-8.txt
 
+wget -O /mnt/disks/data-disk/data/pandora_data/pandora_DC.txt https://data.pandonia-global-network.org/WashingtonDC/Pandora140s1/L2/Pandora140s1_WashingtonDC_L2_rnvh3p1-8.txt
+
 
 matlab -nodisplay -nosplash -r "parse_pandora('/mnt/disks/data-disk/data/pandora_data/pandora_ccny.txt'); exit"
 
@@ -28,3 +30,5 @@ matlab -nodisplay -nosplash -r "parse_pandora('/mnt/disks/data-disk/data/pandora
 matlab -nodisplay -nosplash -r "parse_pandora('/mnt/disks/data-disk/data/pandora_data/pandora_greenbelt2.txt'); exit"
 
 matlab -nodisplay -nosplash -r "parse_pandora('/mnt/disks/data-disk/data/pandora_data/pandora_greenbelt32.txt'); exit"
+
+matlab -nodisplay -nosplash -r "parse_pandora('/mnt/disks/data-disk/data/pandora_data/pandora_DC.txt'); exit"

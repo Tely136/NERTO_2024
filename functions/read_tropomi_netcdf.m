@@ -1,20 +1,33 @@
 function tropomi_data = read_tropomi_netcdf(file, rows, cols)
-    conversion_factor = 6.022 .* 10.^19; % convert from mol/s/m^2/nm/sr to ph/s/cm^2/nm/sr
+    arguments
+        file
+        rows = []
+        cols = []
+    end
 
     filename = file.Filename;
     product = file.Product;
 
-    start_row = rows(1);
-    start_col = cols(1);
+    if isempty(rows) & isempty(cols)
+        % load all
+        start_row = 1;
+        start_col = 1;
 
-    row_inc = rows(2) - rows(1) + 1;
-    col_inc = cols(2) - cols(1) + 1;
+        row_inc = 450;
+        col_inc = 4173;
+    else
+        start_row = rows(1);
+        start_col = cols(1);
+
+        row_inc = rows(2) - rows(1) + 1;
+        col_inc = cols(2) - cols(1) + 1;
+    end
 
     tropomi_data = struct;
     switch product
         case 'NO2'
-            no2 = ncread(filename, '/PRODUCT/nitrogendioxide_tropospheric_column', [start_row, start_col 1], [row_inc, col_inc 1]) .* conversion_factor;
-            no2_u = ncread(filename, '/PRODUCT/nitrogendioxide_tropospheric_column_precision', [start_row, start_col 1], [row_inc, col_inc 1]) .* conversion_factor; % precision
+            no2 = ncread(filename, '/PRODUCT/nitrogendioxide_tropospheric_column', [start_row, start_col 1], [row_inc, col_inc 1]);
+            no2_u = ncread(filename, '/PRODUCT/nitrogendioxide_tropospheric_column_precision', [start_row, start_col 1], [row_inc, col_inc 1]); % precision
             lat = ncread(filename, '/PRODUCT/latitude', [start_row, start_col 1], [row_inc, col_inc 1]);
             lon = ncread(filename, '/PRODUCT/longitude', [start_row, start_col 1], [row_inc, col_inc 1]);
             lat_corners = ncread(filename, '/PRODUCT/SUPPORT_DATA/GEOLOCATIONS/latitude_bounds', [1 start_row, start_col 1], [4 row_inc, col_inc 1]);
@@ -37,7 +50,7 @@ function tropomi_data = read_tropomi_netcdf(file, rows, cols)
             tropomi_data.time = time;
 
         case 'RA'
-            rad = ncread(filename, '/BAND4_RADIANCE/STANDARD_MODE/OBSERVATIONS/radiance', [1, start_row, start_col, 1], [497, row_inc, col_inc, 1]) .* conversion_factor;
+            rad = ncread(filename, '/BAND4_RADIANCE/STANDARD_MODE/OBSERVATIONS/radiance', [1, start_row, start_col, 1], [497, row_inc, col_inc, 1]);
             wl = ncread(filename, '/BAND4_RADIANCE/STANDARD_MODE/INSTRUMENT/nominal_wavelength', [1 start_row 1], [497 row_inc 1]); %  replace with calibrated wavelengths
             lat = ncread(filename, '/BAND4_RADIANCE/STANDARD_MODE/GEODATA/latitude', [start_row start_col 1], [row_inc, col_inc 1]);
             lon = ncread(filename, '/BAND4_RADIANCE/STANDARD_MODE/GEODATA/longitude', [start_row start_col 1], [row_inc, col_inc 1]);
@@ -56,7 +69,7 @@ function tropomi_data = read_tropomi_netcdf(file, rows, cols)
             tropomi_data.time = time;
 
         case 'IR'
-            irrad = ncread(filename, '/BAND4_IRRADIANCE/STANDARD_MODE/OBSERVATIONS/irradiance', [1 start_row 1 1], [497 row_inc 1 1]) .* conversion_factor;
+            irrad = ncread(filename, '/BAND4_IRRADIANCE/STANDARD_MODE/OBSERVATIONS/irradiance', [1 start_row 1 1], [497 row_inc 1 1]);
             wl = ncread(filename, '/BAND4_IRRADIANCE/STANDARD_MODE/INSTRUMENT/calibrated_wavelength', [1 start_row 1], [497 row_inc 1]);
 
             tropomi_data.irrad = irrad;

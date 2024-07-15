@@ -1,17 +1,43 @@
 clearvars; clc; close all;
 
 results_path = '/mnt/disks/data-disk/data/merged_data';
-
-scan = 9;
-
+save_path = '/mnt/disks/data-disk/figures/results';
+states = readgeotable('/mnt/disks/data-disk/NERTO_2024/shapefiles/cb_2023_us_state_500k/cb_2023_us_state_500k.shp');
 files = dir(fullfile(results_path,'*.mat'));
 
+[filename, path] = uigetfile('/mnt/disks/data-disk/data/merged_data/');
+file = load(fullfile(path, filename));
+% file = load('/mnt/disks/data-disk/data/merged_data/TEMPO_TROPOMI_merged_20240520T181503_S10G3.mat');
 
-% lat_bounds = [40 42]; % new york
-% lon_bounds = [-75, -72];
+bg_no2 = file.save_data.bg_no2 .* 10^6;
+bg_no2_u = file.save_data.bg_no2_u .* 10^6;
+bg_lat = file.save_data.bg_lat;
+bg_lon = file.save_data.bg_lon;
+bg_qa = file.save_data.bg_qa;
+bg_cld = file.save_data.bg_cld;
+bg_time = file.save_data.bg_time;
 
-lat_bounds = [39 40];
-lon_bounds = [-77 -76];
+bg_no2(bg_qa~=0 | bg_cld>0.2) = NaN;
+
+obs_no2 = file.save_data.obs_no2 .* 10^6;
+obs_no2_u = file.save_data.obs_no2_u .* 10^6;
+obs_lat = file.save_data.obs_lat;
+obs_lon = file.save_data.obs_lon;
+obs_qa = file.save_data.obs_qa;
+obs_time = file.save_data.obs_time;
+
+obs_no2(obs_qa<0.75) = NaN;
+
+analysis_no2 = file.save_data.analysis_no2 .* 10^6;
+analysis_no2_u = file.save_data.analysis_no2_u .* 10^6;
+
+analysis_no2(bg_qa~=0 | bg_cld>0.2) = NaN;
+
+update = analysis_no2 - bg_no2;
+
+
+lat_bounds = [min(bg_lat(:)) max(bg_lat(:))];
+lon_bounds = [min(bg_lon(:)) max(bg_lon(:))];
 
 day = 20;
 month = 5;
@@ -24,196 +50,35 @@ day_utc = datetime(year, month, day, 'TimeZone', 'UTC');
 
 font_size = 20;
 resolution = 300;
-dim = [0, 0, 1200, 900];
-
-no2_max = 0;
-no2_u_max = 0;
-
-clim = [0 3*10^16];
+dim = [0, 0, 900, 1000];
 lw = 2;
-% clim = [min([xb(:); xo(:); xa(:)]), max([xb(:); xo(:); xa(:)])];
-
-states = readgeotable('/mnt/disks/data-disk/NERTO_2024/shapefiles/cb_2023_us_state_500k/cb_2023_us_state_500k.shp');
-save_path = '/mnt/disks/data-disk/figures/results';
 
 
-% TEMPO NO2 Column
-fig1_savename = 'tempo';
-fig1 = figure('Visible','off', 'Position', dim);
-usamap(lat_bounds, lon_bounds);
-ax1 = gca;
-hold(ax1, 'on');
-for i = 1:size(files,1)
-    temp_data = load(fullfile(files(i).folder, files(i).name)).save_data;
-    temp_data.tempo_scan;
-    temp_data.tempo_granule;
-    if temp_data.tempo_scan == scan && temp_data.tempo_time >= day_tz && temp_data.tempo_time < day_tz+days(1)
-        surfm(temp_data.bg_lat, temp_data.bg_lon, temp_data.bg_no2);
-        no2_max = max([temp_data.bg_no2(:); no2_max]);
-    end
-end
-geoshow(ax1, states, "DisplayType", "polygon", 'FaceAlpha', 0, 'LineWidth', lw);
-fontsize(font_size, 'points');
-title(strjoin([string(mean(temp_data.bg_time)), 'UTC TEMPO trop-NO2 [molec/cm^2]']));
-colorbar
-setm(ax1, 'Frame', 'off', 'Grid', 'off', 'ParallelLabel', 'off', 'MeridianLabel', 'off');
-colormap('jet')
-hold(ax1, 'off');
+clim_no2 = [0 300];
+clim_no2_u = [0 100];
 
-% TEMPO NO2 Uncertainty
-fig4_savename = 'tempo_u';
-fig4 = figure('Visible','off', 'Position', dim);
-usamap(lat_bounds, lon_bounds);
-ax4 = gca;
-hold(ax4, 'on');
-for i = 1:size(files,1)
-    temp_data = load(fullfile(files(i).folder, files(i).name)).save_data;
-    temp_data.tempo_scan;
-    temp_data.tempo_granule;
-    if temp_data.tempo_scan == scan && temp_data.tempo_time >= day_tz && temp_data.tempo_time < day_tz+days(1)
-        surfm(temp_data.bg_lat, temp_data.bg_lon, temp_data.bg_no2_u);
-        no2_u_max = max([temp_data.bg_no2_u(:); no2_u_max]);
-    end
-end
-geoshow(ax4, states, "DisplayType", "polygon", 'FaceAlpha', 0, 'LineWidth', lw);
-fontsize(font_size, 'points');
-title(strjoin([string(mean(temp_data.bg_time)), 'UTC TEMPO trop-NO2 Uncertainty [molec/cm^2]']));
-colorbar
-setm(ax4, 'Frame', 'off', 'Grid', 'off', 'ParallelLabel', 'off', 'MeridianLabel', 'off');
-colormap('jet')
-hold(ax4, 'off');
+cb_str = 'umol/m^2';
+
+title = strjoin(['TEMPO TropNO2 Column', string(mean(bg_time)), 'UTC']);
+make_map_fig(bg_lat, bg_lon, bg_no2, lat_bounds, lon_bounds, fullfile(save_path, 'tempo'), title, cb_str, clim_no2, [], dim);
+
+title = strjoin(['TEMPO TropNO2 Uncertainty', string(mean(bg_time)), 'UTC']);
+make_map_fig(bg_lat, bg_lon, bg_no2_u, lat_bounds, lon_bounds, fullfile(save_path, 'tempo_u'), title, cb_str, [0 50], [], dim);
 
 
-% TROPOMI NO2 Column
-fig2_savename = 'tropomi';
-fig2 = figure('Visible','off', 'Position', dim);
-usamap(lat_bounds, lon_bounds);
-ax2 = gca;
-hold(ax2, 'on');
-for i = 1:size(files,1)
-    temp_data = load(fullfile(files(i).folder, files(i).name)).save_data;
-    temp_data.tempo_scan;
-    temp_data.tempo_granule;
-    if temp_data.tempo_scan == scan && temp_data.tempo_time >= day_tz && temp_data.tempo_time < day_tz+days(1)
-        surfm(temp_data.obs_lat, temp_data.obs_lon, temp_data.obs_no2);
-        no2_max = max([temp_data.obs_no2(:); no2_max]);
-    end
-end
-geoshow(states, "DisplayType", "polygon", 'FaceAlpha', 0, 'LineWidth', lw);
-fontsize(font_size, 'points');
-title(strjoin([string(mean(temp_data.obs_time)), 'UTC TROPOMI trop-NO2 [molec/cm^2]']));
-colorbar
-ax2 = gca;
-setm(ax2, 'Frame', 'off', 'Grid', 'off', 'ParallelLabel', 'off', 'MeridianLabel', 'off');
-colormap('jet')
-hold(ax2, 'off');
+title = strjoin(['TROPOMI TropNO2 Column', string(mean(obs_time)), 'UTC']);
+make_map_fig(obs_lat, obs_lon, obs_no2, lat_bounds, lon_bounds, fullfile(save_path, 'tropomi'), title, cb_str, clim_no2, [], dim);
+
+title = strjoin(['TROPOMI TropNO2 Uncertainty', string(mean(obs_time)), 'UTC']);
+make_map_fig(obs_lat, obs_lon, obs_no2_u, lat_bounds, lon_bounds, fullfile(save_path, 'tropomi_u'), title, cb_str, [0 30], [], dim);
 
 
-% TROPOMI NO2 Uncertainty
-fig5_savename = 'tropomi_u';
-fig5 = figure('Visible','off', 'Position', dim);
-usamap(lat_bounds, lon_bounds);
-ax5 = gca;
-hold(ax5, 'on');
-for i = 1:size(files,1)
-    temp_data = load(fullfile(files(i).folder, files(i).name)).save_data;
-    temp_data.tempo_scan;
-    temp_data.tempo_granule;
-    if temp_data.tempo_scan == scan && temp_data.tempo_time >= day_tz && temp_data.tempo_time < day_tz+days(1)
-        surfm(temp_data.obs_lat, temp_data.obs_lon, temp_data.obs_no2_u);
-        no2_u_max = max([temp_data.obs_no2_u(:); no2_u_max]);
-    end
-end
-geoshow(states, "DisplayType", "polygon", 'FaceAlpha', 0, 'LineWidth', lw);
-fontsize(font_size, 'points');
-title(strjoin([string(mean(temp_data.obs_time)), 'UTC TROPOMI trop-NO2 Uncertainty [molec/cm^2]']));
-colorbar
-ax5 = gca;
-setm(ax5, 'Frame', 'off', 'Grid', 'off', 'ParallelLabel', 'off', 'MeridianLabel', 'off');
-colormap('jet')
-hold(ax5, 'off');
+title = 'Merged TropNO2 Column';
+make_map_fig(bg_lat, bg_lon, analysis_no2, lat_bounds, lon_bounds, fullfile(save_path, 'merged'), title, cb_str, clim_no2, [], dim);
+
+title = 'Merged TropNO2 Uncertainty';
+make_map_fig(bg_lat, bg_lon, analysis_no2_u, lat_bounds, lon_bounds, fullfile(save_path, 'merged_u'), title, cb_str, [0 10], [], dim);
 
 
-
-% Merged data NO2
-fig3_savename = 'merged';
-fig3 = figure('Visible','off', 'Position', dim);
-usamap(lat_bounds, lon_bounds);
-ax3 = gca;
-hold(ax3, 'on');
-for i = 1:size(files,1)
-    temp_data = load(fullfile(files(i).folder, files(i).name)).save_data;
-    temp_data.tempo_scan;
-    temp_data.tempo_granule;
-    if temp_data.tempo_scan == scan && temp_data.tempo_time >= day_tz && temp_data.tempo_time < day_tz+days(1)
-        surfm(temp_data.bg_lat, temp_data.bg_lon, temp_data.analysis_no2);
-        no2_max = max([temp_data.analysis_no2(:); no2_max]);
-    end
-end
-geoshow(states, "DisplayType", "polygon", 'FaceAlpha', 0, 'LineWidth', lw);
-fontsize(font_size, 'points');
-title('Merged Result trop-NO2 [molec/cm^2]');
-colorbar
-ax3 = gca;
-setm(ax3, 'Frame', 'off', 'Grid', 'off', 'ParallelLabel', 'off', 'MeridianLabel', 'off');
-colormap('jet')
-hold(ax3, 'off');
-
-
-% Merged data NO2 Uncertainty
-fig6_savename = 'merged_u';
-fig6 = figure('Visible','off', 'Position', dim);
-usamap(lat_bounds, lon_bounds);
-ax6 = gca;
-hold(ax6, 'on');
-for i = 1:size(files,1)
-    temp_data = load(fullfile(files(i).folder, files(i).name)).save_data;
-    temp_data.tempo_scan;
-    temp_data.tempo_granule;
-    if temp_data.tempo_scan == scan && temp_data.tempo_time >= day_tz && temp_data.tempo_time < day_tz+days(1)
-        surfm(temp_data.bg_lat, temp_data.bg_lon, temp_data.analysis_no2_u);
-        no2_u_max = max([temp_data.analysis_no2_u(:); no2_u_max]);
-    end
-end
-geoshow(states, "DisplayType", "polygon", 'FaceAlpha', 0, 'LineWidth', lw);
-fontsize(font_size, 'points');
-title('Merged Result trop-NO2 Uncertainty [molec/cm^2]');
-colorbar
-ax6 = gca;
-setm(ax6, 'Frame', 'off', 'Grid', 'off', 'ParallelLabel', 'off', 'MeridianLabel', 'off');
-colormap('jet')
-hold(ax6, 'off');
-
-
-ax1.CLim = [0 no2_max];
-ax2.CLim = [0 no2_max];
-ax3.CLim = [0 no2_max];
-
-ax4.CLim = [0 no2_u_max];
-ax5.CLim = [0 no2_u_max];
-ax6.CLim = [0 2*10^15];
-
-
-fullpath = fullfile(save_path, fig1_savename);
-print(fig1, fullpath, '-dpng', ['-r' num2str(resolution)])
-close(fig1);
-
-fullpath = fullfile(save_path, fig2_savename);
-print(fig2, fullpath, '-dpng', ['-r' num2str(resolution)])
-close(fig2);
-
-fullpath = fullfile(save_path, fig3_savename);
-print(fig3, fullpath, '-dpng', ['-r' num2str(resolution)])
-close(fig3);
-
-fullpath = fullfile(save_path, fig4_savename);
-print(fig4, fullpath, '-dpng', ['-r' num2str(resolution)])
-close(fig4);
-
-fullpath = fullfile(save_path, fig5_savename);
-print(fig5, fullpath, '-dpng', ['-r' num2str(resolution)])
-close(fig5);
-
-fullpath = fullfile(save_path, fig6_savename);
-print(fig6, fullpath, '-dpng', ['-r' num2str(resolution)])
-close(fig6);
+title = 'Analysis Minus Background';
+make_map_fig(bg_lat, bg_lon, update, lat_bounds, lon_bounds, fullfile(save_path, 'update'), title, cb_str, [-100 100], [], dim);

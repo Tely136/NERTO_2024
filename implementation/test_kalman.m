@@ -1,51 +1,74 @@
 clearvars; clc; close all;
 
-tempo_rad_table_path = '/mnt/disks/data-disk/NERTO_2024/tempo_files_table.mat';
-tropomi_rad_table_path = '/mnt/disks/data-disk/NERTO_2024/tropomi_files_table.mat';
-load(tempo_rad_table_path);
-load(tropomi_rad_table_path);
+tempo_files = tempo_table('/mnt/disks/data-disk/data/tempo_data');
+tropomi_files = tropomi_table('/mnt/disks/data-disk/data/tropomi_data');
+
 
 load('USA.mat');
+day = 20;
+month = 5;
+year = 2024;
 
 plot_timezone = 'America/New_York';
 day_tz = datetime(year, month, day, 'TimeZone', plot_timezone);
 day_utc = datetime(year, month, day, 'TimeZone', 'UTC');
 
-lat_bounds = [40 40.5];
-lon_bounds = [-76.5, -76];
+lat_bounds = [39.5 40]; % 
+lon_bounds = [-77 -76.5];
+
+% lat_bounds = [40 40.5];
+% lon_bounds = [-76.5, -76];
+
+% lat_bounds = [39 40]; % baltimore
+% lon_bounds = [-77 -76];
+
+% tropomi_filename = "/mnt/disks/data-disk/data/tropomi_data/S5P_OFFL_L2__NO2____20240513T163121_20240513T181252_34111_03_020600_20240515T094133.nc";
+% tempo_filename = "/mnt/disks/data-disk/data/tempo_data/TEMPO_NO2_L2_V03_20240513T171448Z_S009G03.nc";
 
 tropomi_filename = "/mnt/disks/data-disk/data/tropomi_data/S5P_OFFL_L2__NO2____20240513T163121_20240513T181252_34111_03_020600_20240515T094133.nc";
 tempo_filename = "/mnt/disks/data-disk/data/tempo_data/TEMPO_NO2_L2_V03_20240513T171448Z_S009G03.nc";
 
 % Get file objects
-tropomi_temp = tropomi_files_table(strcmp(tropomi_files_table.Filename,tropomi_filename),:);
-tempo_temp = tempo_files_table(strcmp(tempo_files_table.Filename, tempo_filename),:);
+tropomi_temp = tropomi_files(strcmp(tropomi_files.Filename,tropomi_filename),:);
+tempo_temp = tempo_files(strcmp(tempo_files.Filename, tempo_filename),:);
 
 % Load Tropomi data in lat and lon bounds
 disp('Loading TROPOMI Data')
 [rows_trop, cols_trop] = get_indices(tropomi_temp, lat_bounds, lon_bounds);
 trop_dim = [rows_trop(end)-rows_trop(1)+1, cols_trop(end)-cols_trop(1)+1];
 tropomi_temp_data = read_tropomi_netcdf(tropomi_temp, rows_trop, cols_trop);
+
 trop_no2 = tropomi_temp_data.no2(:);
+trop_no2_u = tropomi_temp_data.no2_u(:);
 trop_lat = tropomi_temp_data.lat(:);
 trop_lon = tropomi_temp_data.lon(:);
-trop_no2_u = tropomi_temp_data.no2_u(:);
+trop_lat_corners = reshape(tropomi_temp_data.lat_corners, 4, []);
+trop_lon_corners = reshape(tropomi_temp_data.lon_corners, 4, []);
 trop_qa = tropomi_temp_data.qa(:);
 trop_time = tropomi_temp_data.time;
 trop_time_avg = mean(trop_time);
+
+trop_qa_filter = ~isnan(trop_no2) & trop_no2>0 & trop_qa>=0.75;
+
 
 % Load Tempo data in lat and lon bounds
 disp('Loading TEMPO data')
 [rows_tempo, cols_tempo] = get_indices(tempo_temp, lat_bounds, lon_bounds);
 tempo_dim = [rows_tempo(end)-rows_tempo(1)+1, cols_tempo(end)-cols_tempo(1)+1];
 tempo_temp_data = read_tempo_netcdf(tempo_temp, rows_tempo, cols_tempo);
-tempo_no2 = tempo_temp_data.no2(:);
+tempo_no2 = tempo_temp_data.no2(:) ./ conversion_factor('trop-tempo');
+tempo_no2_u = tempo_temp_data.no2_u(:) ./ conversion_factor('trop-tempo');
 tempo_lat = tempo_temp_data.lat(:);
 tempo_lon = tempo_temp_data.lon(:);
-tempo_no2_u = tempo_temp_data.no2_u(:);
+tempo_lat_corners = reshape(tempo_temp_data.lat_corners, 4, []);
+tempo_lon_corners = reshape(tempo_temp_data.lon_corners, 4, []);
+tempo_sza = tempo_temp_data.sza(:);
+tempo_cld = tempo_temp_data.cld(:);
 tempo_qa = tempo_temp_data.qa(:);
 tempo_time = tempo_temp_data.time;
 tempo_time_avg = mean(tempo_time);
+
+tempo_qa_filter = ~isnan(tempo_no2) & tempo_no2>0 & tempo_qa==0 & tempo_sza<70 & tempo_cld < 0.2;
 
 % Number of Tropomi and Tempo values
 n_tropomi = length(trop_no2);
@@ -53,7 +76,7 @@ n_tempo = length(tempo_no2);
 
 % Create Observation transformation matrx
 disp('Constructing H matrix')
-H = observation_operator(tempo_lat, tempo_lon, trop_lat, trop_lon);
+H = interpolation_operator(tempo_lat, tempo_lon, tempo_lat_corners, tempo_lon_corners, trop_lat, trop_lon, trop_lat_corners, trop_lon_corners, 'mean');
 
 % Observation (Tropomi) error covariance matrix
 disp('Constructing R matrix')
@@ -125,8 +148,8 @@ save_path = '/mnt/disks/data-disk/figures/testing';
 test_lengths = unique(dij(:));
 test_c = gaspari_cohn(test_lengths./L);
 
-clim_no2 = [0 10^16];
-clim_no2_u = [0 10^16];
+clim_no2 = [0 10^-4];
+clim_no2_u = [0 10^-4];
 
 matrix_image(C, 'Correlation Matrix', fullfile(save_path, 'C'), 'hot') % models correlation between locations in background data
 matrix_image(D, 'Background Variance Matrix', fullfile(save_path, 'D'), 'hot', clim_no2_u) % Diagonal matrix of background data variances
@@ -137,7 +160,7 @@ matrix_image(S, 'Innovation Covariance Matrix', fullfile(save_path, 'S'), 'hot',
 matrix_image(K, 'Kalman Gain Matrix', fullfile(save_path, 'K'), USA, [-.5 .5]) % Determines weight of the innovation
 matrix_image(Pa, 'Analysis Error Covariance', fullfile(save_path, 'Pa'), 'hot') % Analysis error covariance
 create_and_save_fig_bar([diag_Pb diag_Pa], save_path, 'uncertainty_before_after', 'Variance', {'Background', 'Analysis'})
-create_and_save_fig(test_lengths, gaspari_cohn(test_lengths./L), save_path, 'correlation_function', 'Correlation Function', '', 'Distance (km)')
+create_and_save_fig(test_lengths, gaspari_cohn(test_lengths./L), save_path, 'correlation_function', ['Correlation Function L=', num2str(L), ' km'], '', 'Distance (km)')
 
 make_map_fig(trop_lat_plt, trop_lon_plt, trop_no2_plt, lat_bounds, lon_bounds, fullfile(save_path, 'tropno2_orig'), 'TROPOMI NO2', clim_no2_u)
 make_map_fig(tempo_lat_plt, tempo_lon_plt, tempo_no2_plt, lat_bounds, lon_bounds, fullfile(save_path, 'tempono2_orig'), 'TEMPO NO2', clim_no2_u)

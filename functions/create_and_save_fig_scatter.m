@@ -1,5 +1,4 @@
 function create_and_save_fig_scatter(x_data, y_data, path, name, ttext, leg, xtext, ytext, xbound, ybound, dim)
-
     arguments
         x_data
         y_data
@@ -43,7 +42,7 @@ function create_and_save_fig_scatter(x_data, y_data, path, name, ttext, leg, xte
     end
 
     if ~isempty(leg)
-        legend(leg, 'Location', 'southwest')
+        legend(leg, 'Location', 'best')
     end
     
     if ~isempty(ttext)

@@ -38,6 +38,7 @@ function tempo_data = read_tempo_netcdf(file, rows, cols)
             sza = ncread(filename, '/geolocation/solar_zenith_angle', [start_row, start_col], [row_inc, col_inc]);
             vza = ncread(filename, '/geolocation/viewing_zenith_angle', [start_row, start_col], [row_inc, col_inc]);
             qa = ncread(filename, '/product/main_data_quality_flag', [start_row, start_col], [row_inc, col_inc]);
+            cld = ncread(filename, '/support_data/eff_cloud_fraction', [start_row, start_col], [row_inc, col_inc]);
             time = ncread(filename, '/geolocation/time', start_col, col_inc); 
             time = datetime(time, 'ConvertFrom', 'epochtime', 'Epoch', '1980-01-06', 'TimeZone', 'UTC');
 
@@ -50,6 +51,7 @@ function tempo_data = read_tempo_netcdf(file, rows, cols)
             tempo_data.sza = sza;
             tempo_data.vza = vza;
             tempo_data.qa = qa;
+            tempo_data.cld = cld;
             tempo_data.time = time;
 
 

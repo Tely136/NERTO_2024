@@ -10,6 +10,7 @@ day_utc = datetime(year, month, day, 'TimeZone', 'UTC');
 
 tempo_files = tempo_table('/mnt/disks/data-disk/data/tempo_data');
 tempo_files = tempo_files(strcmp(tempo_files.Product, 'NO2') & tempo_files.Date >= day_tz & tempo_files.Date < day_tz + days(1), :);
+
 tropomi_files = tropomi_table('/mnt/disks/data-disk/data/tropomi_data/');
 tropomi_files = tropomi_files(strcmp(tropomi_files.Product, 'NO2') & tropomi_files.Date >= day_tz & tropomi_files.Date < day_tz + days(1), :);
 
@@ -18,8 +19,11 @@ data_save_path = '/mnt/disks/data-disk/data/merged_data';
 % lat_bounds = [40 42]; % new york
 % lon_bounds = [-75, -72];
 
-lat_bounds = [39 40]; % maryland
-lon_bounds = [-77 -76];
+% lat_bounds = [39 40]; % baltimore
+% lon_bounds = [-77 -76];
+
+lat_bounds = [38 40]; % maryland
+lon_bounds = [-78 -75.8];
 
 
 time_window = minutes(60);
@@ -37,15 +41,15 @@ for i = 1:size(tropomi_files,1)
         tropomi_temp_data = read_tropomi_netcdf(tropomi_temp, rows_trop, cols_trop);
 
         % Load tropomi data
-        trop_no2 = tropomi_temp_data.no2;
-        trop_dim = size(trop_no2);
-        trop_no2 = trop_no2(:);
+        trop_dim = [rows_trop(2)-rows_trop(1)+1, cols_trop(2)-cols_trop(1)+1];
+
+        trop_no2 = tropomi_temp_data.no2(:);
+        trop_no2_u = tropomi_temp_data.no2_u(:);
         trop_lat = tropomi_temp_data.lat(:);
         trop_lon = tropomi_temp_data.lon(:);
         trop_lat_corners = reshape(tropomi_temp_data.lat_corners, 4, []);
         trop_lon_corners = reshape(tropomi_temp_data.lon_corners, 4, []);
-        trop_qa = tropomi_temp_data.qa(:);
-        trop_no2_u = tropomi_temp_data.no2_u(:);
+        trop_qa = tropomi_temp_data.qa;
         trop_time = tropomi_temp_data.time;
 
         % Filter out low QA pixels
@@ -60,8 +64,6 @@ for i = 1:size(tropomi_files,1)
             disp('No valid observations in range for this TROPOMI file')
             continue;
         end
-
-
 
         % Observation (Tropomi) error covariance matrix
         disp('Creating observation error covariance matrix')
@@ -88,15 +90,16 @@ for i = 1:size(tropomi_files,1)
                 if abs(tempo_time_avg - trop_time_avg) <= time_window
                     disp(strjoin(['+++ Loading TEMPO file:', tempo_temp.Filename, '+++']))
 
-                    tempo_no2 = tempo_temp_data.no2;
-                    tempo_dim = size(tempo_no2);
-                    tempo_no2 = tempo_no2(:);
+                    tempo_dim = [rows_tempo(2)-rows_tempo(1)+1 cols_tempo(2)-cols_tempo(1)+1];
+
+                    tempo_no2 = tempo_temp_data.no2(:) ./ conversion_factor('trop-tempo');
+                    tempo_no2_u = tempo_temp_data.no2_u(:) ./ conversion_factor('trop-tempo');
                     tempo_lat = tempo_temp_data.lat(:);
                     tempo_lon = tempo_temp_data.lon(:);
                     tempo_lat_corners = reshape(tempo_temp_data.lat_corners, 4, []);
                     tempo_lon_corners = reshape(tempo_temp_data.lon_corners, 4, []);
-                    tempo_qa = tempo_temp_data.qa(:);
-                    tempo_no2_u = tempo_temp_data.no2_u(:);
+                    tempo_qa = tempo_temp_data.qa;
+                    tempo_cld = tempo_temp_data.cld;
 
                     % Filter out low QA pixels
                     % valid_tempo = tempo_qa == 0;
@@ -110,9 +113,6 @@ for i = 1:size(tropomi_files,1)
                         disp('No valid observations in range for this TEMPO file')
                         continue;
                     end
-
-                    % Regrid TEMPO data
-                    % H_regrid = interpolation_operator(tempo_lat, tempo_lon, tempo_lat_corners, tempo_lon_corners, lat_grid_center, lon_grid_center, lat_grid_corners, lon_grid_corners, 'mean');
 
                     % Background (Tempo) diagonal variance matrix
                     disp('Creating background error covariance matrix')
@@ -149,19 +149,22 @@ for i = 1:size(tropomi_files,1)
                     % Prepare data for saving
                     disp('Saving data')
                     save_data = struct;
+                    save_data.bg_no2 = reshape(tempo_no2, tempo_dim);
+                    save_data.bg_no2_u = reshape(tempo_no2_u, tempo_dim);
                     save_data.bg_lat = reshape(tempo_lat, tempo_dim);
                     save_data.bg_lon = reshape(tempo_lon, tempo_dim);
+                    save_data.bg_qa = tempo_qa;
+                    save_data.bg_cld = tempo_cld;
+
+                    save_data.obs_no2 = reshape(trop_no2, trop_dim);
+                    save_data.obs_no2_u = reshape(trop_no2_u, trop_dim);
                     save_data.obs_lat = reshape(trop_lat, trop_dim);
                     save_data.obs_lon = reshape(trop_lon, trop_dim);
+                    save_data.obs_qa = trop_qa;
 
-                    save_data.bg_no2 = reshape(tempo_no2, tempo_dim);
-                    save_data.obs_no2 = reshape(trop_no2, trop_dim);
-
-                    save_data.bg_no2_u = reshape(tempo_no2_u, tempo_dim);
-                    save_data.obs_no2_u = reshape(trop_no2_u, trop_dim);
-                    save_data.analysis_no2_u = Pa;
 
                     save_data.analysis_no2 = reshape(Xa, tempo_dim);
+                    save_data.analysis_no2_u = reshape(diag(Pa), tempo_dim);
 
                     save_data.bg_time = tempo_time;
                     save_data.obs_time = trop_time;
