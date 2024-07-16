@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 
 # Define the start and end dates for the range
 start_date = '2024-05-13'
-end_date = '2024-06-15'
+end_date = '2024-07-01'
 
 # Convert to datetime objects
 start_date = datetime.strptime(start_date, '%Y-%m-%d')

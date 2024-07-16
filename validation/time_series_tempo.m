@@ -1,8 +1,5 @@
 clearvars; close all; clc;
 
-%% Make a function that scans TEMPO folder and creates table of all datafile
-%% do the same for tropomi
-
 varnames = {'time', 'Site', 'Dist2Site', 'NO2', 'QA', 'Uncertainty', 'VZA', 'SZA', 'Cld_frac'};
 vartypes = {'datetime', 'string', 'double', 'double', 'double', 'double', 'double', 'double', 'double'};
 

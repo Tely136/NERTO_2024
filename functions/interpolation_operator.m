@@ -56,6 +56,6 @@ function H = interpolation_operator(bg_lat, bg_lon, bg_lat_corners, bg_lon_corne
                     end
                 end
 
-                disp(num2str(100 * i/m))
+                % disp(num2str(100 * i/m))
             end
     end

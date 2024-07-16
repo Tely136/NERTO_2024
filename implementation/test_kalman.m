@@ -25,8 +25,8 @@ lon_bounds = [-77 -76.5];
 % tropomi_filename = "/mnt/disks/data-disk/data/tropomi_data/S5P_OFFL_L2__NO2____20240513T163121_20240513T181252_34111_03_020600_20240515T094133.nc";
 % tempo_filename = "/mnt/disks/data-disk/data/tempo_data/TEMPO_NO2_L2_V03_20240513T171448Z_S009G03.nc";
 
-tropomi_filename = "/mnt/disks/data-disk/data/tropomi_data/S5P_OFFL_L2__NO2____20240513T163121_20240513T181252_34111_03_020600_20240515T094133.nc";
-tempo_filename = "/mnt/disks/data-disk/data/tempo_data/TEMPO_NO2_L2_V03_20240513T171448Z_S009G03.nc";
+tropomi_filename = "/mnt/disks/data-disk/data/tropomi_data/S5P_OFFL_L2__NO2____20240607T170340_20240607T184510_34466_03_020600_20240612T142952.nc";
+tempo_filename = "/mnt/disks/data-disk/data/tempo_data/TEMPO_NO2_L2_V03_20240607T182306Z_S010G03.nc";
 
 % Get file objects
 tropomi_temp = tropomi_files(strcmp(tropomi_files.Filename,tropomi_filename),:);
@@ -50,11 +50,22 @@ trop_time_avg = mean(trop_time);
 
 trop_qa_filter = ~isnan(trop_no2) & trop_no2>0 & trop_qa>=0.75;
 
+trop_no2(~trop_qa_filter) = NaN;
+
+trop_no2_merge = trop_no2(trop_qa_filter);
+trop_no2_u_merge = trop_no2_u(trop_qa_filter);
+trop_lat_merge = trop_lat(trop_qa_filter);
+trop_lon_merge = trop_lon(trop_qa_filter);
+trop_lat_corners_merge = trop_lat_corners(:,trop_qa_filter);
+trop_lon_corners_merge = trop_lon_corners(:,trop_qa_filter);
+
+
 
 % Load Tempo data in lat and lon bounds
 disp('Loading TEMPO data')
 [rows_tempo, cols_tempo] = get_indices(tempo_temp, lat_bounds, lon_bounds);
 tempo_dim = [rows_tempo(end)-rows_tempo(1)+1, cols_tempo(end)-cols_tempo(1)+1];
+
 tempo_temp_data = read_tempo_netcdf(tempo_temp, rows_tempo, cols_tempo);
 tempo_no2 = tempo_temp_data.no2(:) ./ conversion_factor('trop-tempo');
 tempo_no2_u = tempo_temp_data.no2_u(:) ./ conversion_factor('trop-tempo');
@@ -70,26 +81,36 @@ tempo_time_avg = mean(tempo_time);
 
 tempo_qa_filter = ~isnan(tempo_no2) & tempo_no2>0 & tempo_qa==0 & tempo_sza<70 & tempo_cld < 0.2;
 
+tempo_no2(~tempo_qa_filter) = NaN;
+
+tempo_no2_merge = tempo_no2(tempo_qa_filter);
+tempo_no2_u_merge = tempo_no2_u(tempo_qa_filter);
+tempo_lat_merge = tempo_lat(tempo_qa_filter);
+tempo_lon_merge = tempo_lon(tempo_qa_filter);
+tempo_lat_corners_merge = tempo_lat_corners(:,tempo_qa_filter);
+tempo_lon_corners_merge = tempo_lon_corners(:,tempo_qa_filter);
+
+
 % Number of Tropomi and Tempo values
-n_tropomi = length(trop_no2);
-n_tempo = length(tempo_no2);
+n_tropomi = length(tempo_no2_merge);
+n_tempo = length(tempo_no2_merge);
 
 % Create Observation transformation matrx
 disp('Constructing H matrix')
-H = interpolation_operator(tempo_lat, tempo_lon, tempo_lat_corners, tempo_lon_corners, trop_lat, trop_lon, trop_lat_corners, trop_lon_corners, 'mean');
+H = interpolation_operator(tempo_lat_merge, tempo_lon_merge, tempo_lat_corners_merge, tempo_lon_corners_merge, trop_lat_merge, trop_lon_merge, trop_lat_corners_merge, trop_lon_corners_merge, 'mean');
 
 % Observation (Tropomi) error covariance matrix
 disp('Constructing R matrix')
-R = diag(trop_no2_u);
+R = diag(trop_no2_u_merge);
 
 % Background (Tempo) diagonal variance matrix
 disp('Constructing D matrix')
-D = diag(tempo_no2_u);
+D = diag(tempo_no2_u_merge);
 
 % Create matrix containing distances between each point in Tempo data
 disp('Constructing C matrix')
-[tempo_lat1, tempo_lat2] = meshgrid(tempo_lat, tempo_lat);
-[tempo_lon1, tempo_lon2] = meshgrid(tempo_lon, tempo_lon);
+[tempo_lat1, tempo_lat2] = meshgrid(tempo_lat_merge, tempo_lat_merge);
+[tempo_lon1, tempo_lon2] = meshgrid(tempo_lon_merge, tempo_lon_merge);
 
 dij = distance(tempo_lat1, tempo_lon1, tempo_lat2, tempo_lon2);
 dij = deg2km(dij);
@@ -114,8 +135,9 @@ K = Pb * H' / (S) ;
 
 % Analysis update
 disp('Calculating analysis')
-innovation = trop_no2 - H*tempo_no2;
-Xa = tempo_no2 + K * innovation;
+innovation = trop_no2_merge - H * tempo_no2_merge;
+
+Xa = tempo_no2_merge + K * innovation;
 
 % Analysis Error Covariance
 Pa = (eye(length(Xa)) - K*H) * Pb;
@@ -126,8 +148,10 @@ diag_Pa = diag(Pa);
 
 u_reduction = diag_Pb - diag_Pa;
 
-tempo_no2_interp = H * tempo_no2;
-tempo_no2_interp_plt = reshape(tempo_no2_interp, trop_dim);
+tempo_no2_interp = H * tempo_no2_merge;
+tempo_no2_interp_plt = NaN(trop_dim);
+tempo_no2_interp_plt(trop_qa_filter) = tempo_no2_interp;
+% tempo_no2_interp_plt = reshape(tempo_no2_interp, trop_dim);
 
 tempo_no2_plt = reshape(tempo_no2, tempo_dim);
 tempo_lat_plt = reshape(tempo_lat, tempo_dim);
@@ -137,7 +161,9 @@ trop_no2_plt = reshape(trop_no2, trop_dim);
 trop_lat_plt = reshape(trop_lat, trop_dim);
 trop_lon_plt = reshape(trop_lon, trop_dim);
 
-analysis_no2_plt = reshape(Xa, tempo_dim);
+analysis_no2_plt = NaN(tempo_dim);
+analysis_no2_plt(tempo_qa_filter) = Xa;
+% analysis_no2_plt = reshape(Xa, tempo_dim);
 
 
 %% Plots
