@@ -18,6 +18,8 @@ all_coords = [[40.8153 -73.9505];
 
 distance_threshold = km2deg(5, 'earth'); 
 
+% files = dir('/mnt/disks/data-disk/data/merged_data/*MARYLAND*.mat');
+% files = dir('/mnt/disks/data-disk/data/merged_data/*NYC*.mat');
 files = dir('/mnt/disks/data-disk/data/merged_data/*.mat');
 
 for i = 1:length(files)
