@@ -1,25 +1,16 @@
 clearvars; clc; close all;
 
-day = 20;
-month = 5;
-year = 2024;
-
-
 plot_timezone = 'America/New_York';
-day_tz = datetime(year, month, day, 'TimeZone', plot_timezone);
-day_utc = datetime(year, month, day, 'TimeZone', 'UTC');
+
 
 start_day = datetime(2024,5,20,"TimeZone", plot_timezone);
-end_day = datetime(2024,5,21, "TimeZone", plot_timezone);
+end_day = datetime(2024,5,20, "TimeZone", plot_timezone);
 
-period = timerange(start_day, end_day, "openright");
 
 tempo_files = table2timetable(tempo_table('/mnt/disks/data-disk/data/tempo_data'));
-tempo_files = tempo_files(period,:);
 tempo_files = tempo_files(strcmp(tempo_files.Product, 'NO2'),:);
 
 tropomi_files = table2timetable(tropomi_table('/mnt/disks/data-disk/data/tropomi_data/'));
-tropomi_files = tropomi_files(period,:);
 tropomi_files = tropomi_files(strcmp(tropomi_files.Product, 'NO2'),:);
 
 data_save_path = '/mnt/disks/data-disk/data/merged_data';
@@ -27,6 +18,7 @@ data_save_path = '/mnt/disks/data-disk/data/merged_data';
 
 % lat_bounds = [39 40]; % baltimore
 % lon_bounds = [-77 -76];
+% suffix = '_TEST';
 
 lat_bounds = [38 40]; % maryland
 lon_bounds = [-78 -75.8];
@@ -36,180 +28,210 @@ suffix = '_MARYLAND';
 % lon_bounds = [-74.6 -72.7];
 % suffix = '_NYC';
 
-time_window = minutes(60);
+time_window = minutes(30);
 L = 30; % correlation length in km
 
+% you may have to read the dimensions from the netcdf file inside the function for each file
+tempo_dim = [2100, 500];
+trop_dim = [500 4200];
 
-% loop over each day, aggregate granules per scan per day
-% skip scans ~= 8,9,10,11 for now
-for i = 1:size(tempo_files,1)
-    tempo_temp = tempo_files(i,:);
-    [rows_tempo, cols_tempo] = get_indices(tempo_temp, lat_bounds, lon_bounds);
+run_days = start_day:end_day;
+% scans = [8,9,10,11];
+scans = [10];
 
-    if isempty(rows_tempo) | isempty(cols_tempo)
-        % Skip tempo file because it has no pixels in bounds
-        continue
-    else
-        disp(strjoin(['+++ Loading TEMPO file:', tempo_temp.Filename, '+++']))
-        tempo_temp_data = read_tempo_netcdf(tempo_temp, rows_tempo, cols_tempo);
+for i = 1:length(run_days)
+    current_day = run_days(i);
+    day_period = timerange(current_day, current_day+days(1));
 
-        tempo_dim = [rows_tempo(2)-rows_tempo(1)+1 cols_tempo(2)-cols_tempo(1)+1];
+    tempo_files_day = tempo_files(day_period,:); % all tempo files for this day
+    trop_files_day = tropomi_files(day_period,:); % all tropomi files for this day
 
-        tempo_no2 = tempo_temp_data.no2(:) ./ conversion_factor('trop-tempo');
-        tempo_no2_u = tempo_temp_data.no2_u(:) ./ conversion_factor('trop-tempo');
-        tempo_lat = tempo_temp_data.lat(:);
-        tempo_lon = tempo_temp_data.lon(:);
-        tempo_lat_corners = reshape(tempo_temp_data.lat_corners, 4, []);
-        tempo_lon_corners = reshape(tempo_temp_data.lon_corners, 4, []);
-        tempo_qa = tempo_temp_data.qa(:);
-        tempo_cld = tempo_temp_data.cld(:);
-        tempo_sza = tempo_temp_data.sza(:);
-        tempo_time = tempo_temp_data.time;
-        tempo_time_avg = mean(tempo_time);
+    % load all tropomi data
+    trop_lat = single(NaN(trop_dim(1),trop_dim(2),size(trop_files_day,1)));
+    trop_lon = single(NaN(trop_dim(1),trop_dim(2),size(trop_files_day,1)));
+    trop_lat_corners = single(NaN(4,trop_dim(1),trop_dim(2),size(trop_files_day,1)));
+    trop_lon_corners = single(NaN(4,trop_dim(1),trop_dim(2),size(trop_files_day,1)));
+    trop_no2 = single(NaN(trop_dim(1),trop_dim(2),size(trop_files_day,1)));
+    trop_no2_u = single(NaN(trop_dim(1),trop_dim(2),size(trop_files_day,1)));
+    trop_qa = single(NaN(trop_dim(1),trop_dim(2),size(trop_files_day,1)));
+    trop_time = NaT(trop_dim(1),trop_dim(2),size(trop_files_day,1), 'TimeZone', 'UTC');
 
-        tempo_qa_filter = ~isnan(tempo_no2) & tempo_no2>0 & tempo_qa==0 & tempo_sza<70 & tempo_cld < 0.2;
+    for j = 1:size(trop_files_day,1)
+        trop_data_temp = read_tropomi_netcdf(trop_files_day(j,:));
 
-        tempo_no2(~tempo_qa_filter) = NaN;
+        temp_lat = trop_data_temp.lat;
 
-        tempo_no2_merge = tempo_no2(tempo_qa_filter);
-        tempo_no2_u_merge = tempo_no2_u(tempo_qa_filter);
-        tempo_lat_merge = tempo_lat(tempo_qa_filter);
-        tempo_lon_merge = tempo_lon(tempo_qa_filter);
-        tempo_lat_corners_merge = tempo_lat_corners(:,tempo_qa_filter);
-        tempo_lon_corners_merge = tempo_lon_corners(:,tempo_qa_filter);
+        row = size(temp_lat,1);
+        col = size(temp_lat,2);
 
-        [y,m,d] = ymd(tempo_time_avg);
-        temp_trop_files = tropomi_files(timerange(datetime(y,m,d, "TimeZone", plot_timezone), datetime(y,m,d+1, "TimeZone", plot_timezone), 'openright'),:);
+        trop_lat(1:row,1:col,j) = trop_data_temp.lat;
+        trop_lon(1:row,1:col,j) = trop_data_temp.lon;
+        trop_lat_corners(:,1:row,1:col,j) = trop_data_temp.lat_corners;
+        trop_lon_corners(:,1:row,1:col,j) = trop_data_temp.lon_corners;
+        trop_no2(1:row,1:col,j) = trop_data_temp.no2;
+        trop_no2_u(1:row,1:col,j) = trop_data_temp.no2_u;
+        trop_qa(1:row,1:col,j) = trop_data_temp.qa;
+        trop_time(1:row,1:col,j) = resize(trop_data_temp.time', [row,col], 'Pattern', 'circular');
 
+    end
 
-        for j = 1:size(temp_trop_files,1)
-            tropomi_temp = temp_trop_files(j,:);
-            [rows_trop, cols_trop] = get_indices(tropomi_temp, lat_bounds, lon_bounds);
+    for j = 1:length(scans)
+        tempo_lat = single(NaN(tempo_dim));
+        tempo_lon = single(NaN(tempo_dim));
+        tempo_lat_corners = single(NaN(4,tempo_dim(1),tempo_dim(2)));
+        tempo_lon_corners = single(NaN(4,tempo_dim(1),tempo_dim(2)));
+        tempo_no2 = NaN(tempo_dim);
+        tempo_no2_u = NaN(tempo_dim);
+        tempo_qa = NaN(tempo_dim);
+        tempo_cld = NaN(tempo_dim);
+        tempo_sza = NaN(tempo_dim);
+        tempo_time = NaT(tempo_dim, 'TimeZone', 'UTC');
 
-            if isempty(rows_trop) | isempty(cols_trop)
-                disp('trop file not in bounds')
-                % skip this tropomi file
+        col_counter = 1;
 
-            else
-                tropomi_temp_data = read_tropomi_netcdf(tropomi_temp, rows_trop, cols_trop);
-                trop_time = tropomi_temp_data.time;
-                pixels_in_time = find(trop_time>=tempo_time_avg-time_window & trop_time<=tempo_time_avg+time_window);
+        scan = scans(j);
+        tempo_files_scan = tempo_files_day(tempo_files_day.Scan==scan,:);
 
-                if isempty(pixels_in_time)
-                    disp('no pixels in time window')
+        for k = 1:size(tempo_files_scan,1)
+            tempo_data_temp = read_tempo_netcdf(tempo_files_scan(k,:));
 
-                else
-                    trop_dim = [rows_trop(2)-rows_trop(1)+1, cols_trop(2)-cols_trop(1)+1];
+            temp_lat = tempo_data_temp.lat;
 
-                    trop_no2 = tropomi_temp_data.no2(:);
-                    trop_no2_u = tropomi_temp_data.no2_u(:);
-                    trop_lat = tropomi_temp_data.lat(:);
-                    trop_lon = tropomi_temp_data.lon(:);
-                    trop_lat_corners = reshape(tropomi_temp_data.lat_corners, 4, []);
-                    trop_lon_corners = reshape(tropomi_temp_data.lon_corners, 4, []);
-                    trop_qa = tropomi_temp_data.qa(:);
+            row = size(temp_lat,1);
+            col = size(temp_lat,2);
 
-                    trop_qa_filter = ~isnan(trop_no2) & trop_no2>0 & trop_qa>=0.75;
+            tempo_lat(1:row,col_counter:col_counter+col-1) = tempo_data_temp.lat;
+            tempo_lon(1:row,col_counter:col_counter+col-1) = tempo_data_temp.lon;
+            tempo_lat_corners(:,1:row,col_counter:col_counter+col-1) = tempo_data_temp.lat_corners;
+            tempo_lon_corners(:,1:row,col_counter:col_counter+col-1) = tempo_data_temp.lon_corners;
+            tempo_no2(1:row,col_counter:col_counter+col-1) = tempo_data_temp.no2 ./ conversion_factor('trop-tempo');
+            tempo_no2_u(1:row,col_counter:col_counter+col-1) = tempo_data_temp.no2_u ./ conversion_factor('trop-tempo');
+            tempo_qa(1:row,col_counter:col_counter+col-1) = tempo_data_temp.qa;
+            tempo_cld(1:row,col_counter:col_counter+col-1) = tempo_data_temp.cld;
+            tempo_sza(1:row,col_counter:col_counter+col-1) = tempo_data_temp.sza;
+            tempo_time(1:row,col_counter:col_counter+col-1) = resize(tempo_data_temp.time', [row,col], 'Pattern', 'circular');
 
-                    trop_no2(~trop_qa_filter) = NaN;
-
-                    trop_no2_merge = trop_no2(trop_qa_filter);
-                    trop_no2_u_merge = trop_no2_u(trop_qa_filter);
-                    trop_lat_merge = trop_lat(trop_qa_filter);
-                    trop_lon_merge = trop_lon(trop_qa_filter);
-                    trop_lat_corners_merge = trop_lat_corners(:,trop_qa_filter);
-                    trop_lon_corners_merge = trop_lon_corners(:,trop_qa_filter);
-
-                    if isempty(isempty(find(~isnan(tempo_no2_merge), 1)))
-                        disp('no valid tempo pixels')
-
-                    elseif isempty(isempty(find(~isnan(trop_no2_merge), 1)))
-                        disp('no valid tropomi pixels')
-
-                    else
-                        % Observation (Tropomi) error covariance matrix
-                        disp('Creating observation error covariance matrix')
-                        R = diag(trop_no2_u_merge);
-                        
-                        % Background (Tempo) error covariance matrix
-                        disp('Creating background error covariance matrix')
-                        D = diag(tempo_no2_u_merge);
-
-                        % Create matrix containing distances between each point in Tempo data
-                        [tempo_lat1, tempo_lat2] = meshgrid(tempo_lat_merge, tempo_lat_merge);
-                        [tempo_lon1, tempo_lon2] = meshgrid(tempo_lon_merge, tempo_lon_merge);
-
-                        dij = distance(tempo_lat1, tempo_lon1, tempo_lat2, tempo_lon2);
-                        dij = deg2km(dij);
-
-                        % Correlation matrix 
-                        C = gaspari_cohn(dij ./ L);
-
-                        % Background (Tempo) error covariance function
-                        Pb = sqrt(D)' * C * sqrt(D);
-
-                        % Observation transformation matrix
-                        disp('Calculating observation matrix')
-                        H = interpolation_operator(tempo_lat_merge, tempo_lon_merge, tempo_lat_corners_merge, tempo_lon_corners_merge, trop_lat_merge, trop_lon_merge, trop_lat_corners_merge, trop_lon_corners_merge, 'mean');
-
-                        % Kalman Gain
-                        disp('Calculating Kalman Gain matrix')
-                        K = Pb * H' / (H * Pb * H' + R);
-
-                        singular = false;
-                        if isnan(cond(K))
-                            singular = true;
-                        end
-
-                        % Analysis update
-                        disp('Calculating analysis update')
-                        Xa = tempo_no2_merge + K * (trop_no2_merge - H * tempo_no2_merge);
-
-                        % Analysis Error Covariance
-                        Pa = (eye(length(Xa)) - K * H) * Pb;
-
-                        % Prepare data for saving
-                        disp('Saving data')
-                        save_data = struct;
-                        save_data.bg_no2 = reshape(tempo_no2, tempo_dim);
-                        save_data.bg_no2_u = reshape(tempo_no2_u, tempo_dim);
-                        save_data.bg_lat = reshape(tempo_lat, tempo_dim);
-                        save_data.bg_lon = reshape(tempo_lon, tempo_dim);
-                        save_data.bg_qa = tempo_qa;
-                        save_data.bg_cld = tempo_cld;
-
-                        save_data.obs_no2 = reshape(trop_no2, trop_dim);
-                        save_data.obs_no2_u = reshape(trop_no2_u, trop_dim);
-                        save_data.obs_lat = reshape(trop_lat, trop_dim);
-                        save_data.obs_lon = reshape(trop_lon, trop_dim);
-                        save_data.obs_qa = trop_qa;
-
-
-                        analysis_no2 = NaN(tempo_dim);
-                        analysis_no2(tempo_qa_filter) = Xa;
-                        save_data.analysis_no2 = analysis_no2;
-
-                        analysis_no2_u = NaN(tempo_dim);
-                        analysis_no2_u(tempo_qa_filter) = diag(Pa);
-                        save_data.analysis_no2_u = analysis_no2_u;
-
-                        save_data.bg_time = tempo_time;
-                        save_data.obs_time = trop_time;
-
-                        save_data.tempo_time = tempo_temp.Date;
-                        save_data.tempo_scan = tempo_temp.Scan;
-                        save_data.tempo_granule = tempo_temp.Granule;
-
-                        save_data.singular = singular;
-
-                        savename = ['TEMPO_TROPOMI_merged_', char(datetime(tempo_temp.Date, 'Format', 'uuuuMMdd''T''HHmmss')), '_S', num2str(tempo_temp.Scan), 'G', num2str(tempo_temp.Granule), suffix, '.mat'];
-                        save(fullfile(data_save_path, savename), "save_data", '-mat');
-                        disp([savename, ' saved']);
-
-                        break % just do one trop file for now
-                    end
-                end
-            end
+            col_counter = col_counter+col;
         end
+        clear tempo_data_temp trop_data_temp temp_lat
+
+        valid_ind_tempo = tempo_lat>=lat_bounds(1) & tempo_lat<=lat_bounds(2) & tempo_lon>=lon_bounds(1) & tempo_lon<=lon_bounds(2) & tempo_qa==0 & tempo_cld<0.2 & tempo_sza<70;
+        valid_ind_trop = trop_lat>=lat_bounds(1) & trop_lat<=lat_bounds(2) & trop_lon>=lon_bounds(1) & trop_lon<=lon_bounds(2) & trop_qa>=0.75;
+
+        tempo_lat = tempo_lat(valid_ind_tempo);
+        tempo_lon = tempo_lon(valid_ind_tempo);
+        tempo_lat_corners = tempo_lat_corners(:,valid_ind_tempo);
+        tempo_lon_corners = tempo_lon_corners(:,valid_ind_tempo);
+        tempo_no2 = tempo_no2(valid_ind_tempo);
+        tempo_no2_u = tempo_no2_u(valid_ind_tempo);
+        tempo_time = tempo_time(valid_ind_tempo);
+
+        trop_lat = trop_lat(valid_ind_trop);
+        trop_lon = trop_lon(valid_ind_trop);
+        trop_lat_corners = trop_lat_corners(:,valid_ind_trop);
+        trop_lon_corners = trop_lon_corners(:,valid_ind_trop);
+        trop_no2 = trop_no2(valid_ind_trop);
+        trop_no2_u = trop_no2_u(valid_ind_trop);
+        trop_time = trop_time(valid_ind_trop);
+
+        % Observation (Tropomi) error covariance matrix
+        disp('Creating observation error covariance matrix')
+        R = diag(trop_no2_u);
+        
+        % Background (Tempo) error covariance matrix
+        disp('Creating background error covariance matrix')
+        D = diag(tempo_no2_u);
+
+        % Create matrix containing distances between each point in Tempo data
+        [tempo_lat1, tempo_lat2] = meshgrid(tempo_lat, tempo_lat);
+        [tempo_lon1, tempo_lon2] = meshgrid(tempo_lon, tempo_lon);
+
+        dij = distance(tempo_lat1, tempo_lon1, tempo_lat2, tempo_lon2);
+        dij = deg2km(dij);
+
+        % Correlation matrix 
+        C = gaspari_cohn(dij ./ L);
+
+        % Background (Tempo) error covariance function
+        Pb = sqrt(D)' * C * sqrt(D);
+
+        % Clear data no longer needed
+        clear D C dij tempo_lat1 tempo_lat2 tempo_lon1 tempo_lon2
+
+        % Observation transformation matrix
+        disp('Calculating observation matrix')
+        H = interpolation_operator(tempo_lat, tempo_lon, tempo_lat_corners, tempo_lon_corners, tempo_time, trop_lat, trop_lon, trop_lat_corners, trop_lon_corners, trop_time, 'mean');
+
+        % Kalman Gain
+        disp('Calculating Kalman Gain matrix')
+        K = Pb * H' / (H * Pb * H' + R);
+
+        singular = false;
+        if isnan(cond(K))
+            singular = true;
+        end
+
+        % Analysis update
+        disp('Calculating analysis update')
+        Xa = tempo_no2 + K * (trop_no2 - H * tempo_no2);
+
+        % Analysis Error Covariance
+        Pa = (eye(length(Xa)) - K * H) * Pb;
+
+        % Prepare data for saving
+        disp('Saving data')
+        save_data = struct;
+
+        save_data.bg_no2 = NaN(tempo_dim);
+        save_data.bg_no2(valid_ind_tempo) = tempo_no2;
+
+        save_data.bg_no2_u = NaN(tempo_dim);
+        save_data.bg_no2_u(valid_ind_tempo) = tempo_no2_u;
+
+        save_data.bg_lat = NaN(tempo_dim);
+        save_data.bg_lat(valid_ind_tempo) = tempo_lat;
+
+        save_data.bg_lon = NaN(tempo_dim);
+        save_data.bg_lon(valid_ind_tempo) = tempo_lon;
+
+        save_data.bg_qa = tempo_qa;
+        save_data.bg_cld = tempo_cld;
+
+        save_data.obs_no2 = NaN([trop_dim(1),trop_dim(2),size(trop_files_day,1)]);
+        save_data.obs_no2(valid_ind_trop) = trop_no2;
+
+        save_data.obs_no2_u = NaN([trop_dim(1),trop_dim(2),size(trop_files_day,1)]);
+        save_data.obs_no2_u(valid_ind_trop) = trop_no2_u;
+
+        save_data.obs_lat = NaN([trop_dim(1),trop_dim(2),size(trop_files_day,1)]);
+        save_data.obs_lat(valid_ind_trop) = trop_lat;
+
+        save_data.obs_lon = NaN([trop_dim(1),trop_dim(2),size(trop_files_day,1)]);
+        save_data.obs_lon(valid_ind_trop) = trop_lon;
+
+        save_data.obs_qa = trop_qa;
+
+
+        save_data.analysis_no2 = NaN(tempo_dim);
+        save_data.analysis_no2(valid_ind_tempo) = Xa;
+
+        save_data.analysis_no2_u = NaN(tempo_dim);
+        save_data.analysis_no2_u(valid_ind_tempo) = diag(Pa);
+
+        save_data.bg_time = tempo_time;
+        save_data.obs_time = trop_time;
+
+        % save_data.tempo_time = tempo_temp.Date;
+        save_data.tempo_scan = scan;
+
+        % maybe list the present granules
+        % save_data.tempo_granule = tempo_temp.Granule;
+
+        save_data.singular = singular;
+
+        savename = ['TEMPO_TROPOMI_merged_', char(datetime(current_day, 'Format', 'uuuuMMdd')), '_S', num2str(scan), suffix, '.mat'];
+        save(fullfile(data_save_path, savename), "save_data", '-mat');
+        disp([savename, ' saved']);
+
     end
 end

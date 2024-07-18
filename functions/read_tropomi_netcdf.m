@@ -13,8 +13,10 @@ function tropomi_data = read_tropomi_netcdf(file, rows, cols)
         start_row = 1;
         start_col = 1;
 
-        row_inc = 450;
-        col_inc = 4173;
+        dim = ncinfo(filename, '/PRODUCT/latitude').Size;
+
+        row_inc = dim(1);
+        col_inc = dim(2);
     else
         start_row = rows(1);
         start_col = cols(1);

@@ -177,22 +177,22 @@ test_c = gaspari_cohn(test_lengths./L);
 clim_no2 = [0 10^-4];
 clim_no2_u = [0 10^-4];
 
-matrix_image(C, 'Correlation Matrix', fullfile(save_path, 'C'), 'hot') % models correlation between locations in background data
-matrix_image(D, 'Background Variance Matrix', fullfile(save_path, 'D'), 'hot', clim_no2_u) % Diagonal matrix of background data variances
-matrix_image(R, 'Observation Covariance Matrix', fullfile(save_path, 'R'), 'hot', clim_no2_u) % Diagonal matrix of observation data variances
-matrix_image(Pb, 'Background Covariance Matrix', fullfile(save_path, 'Pb'), 'hot', clim_no2_u) % Background covariance data with correlation model incorporated
-matrix_image(H, 'Observation Transformation Matrix', fullfile(save_path, 'H'), 'gray') % Observation transformation operator
-matrix_image(S, 'Innovation Covariance Matrix', fullfile(save_path, 'S'), 'hot', clim_no2_u) % Innovation covariance matrix
-matrix_image(K, 'Kalman Gain Matrix', fullfile(save_path, 'K'), USA, [-.5 .5]) % Determines weight of the innovation
-matrix_image(Pa, 'Analysis Error Covariance', fullfile(save_path, 'Pa'), 'hot') % Analysis error covariance
-create_and_save_fig_bar([diag_Pb diag_Pa], save_path, 'uncertainty_before_after', 'Variance', {'Background', 'Analysis'})
-create_and_save_fig(test_lengths, gaspari_cohn(test_lengths./L), save_path, 'correlation_function', ['Correlation Function L=', num2str(L), ' km'], '', 'Distance (km)')
+% matrix_image(C, 'Correlation Matrix', fullfile(save_path, 'C'), 'hot') % models correlation between locations in background data
+% matrix_image(D, 'Background Variance Matrix', fullfile(save_path, 'D'), 'hot', clim_no2_u) % Diagonal matrix of background data variances
+% matrix_image(R, 'Observation Covariance Matrix', fullfile(save_path, 'R'), 'hot', clim_no2_u) % Diagonal matrix of observation data variances
+% matrix_image(Pb, 'Background Covariance Matrix', fullfile(save_path, 'Pb'), 'hot', clim_no2_u) % Background covariance data with correlation model incorporated
+% matrix_image(H, 'Observation Transformation Matrix', fullfile(save_path, 'H'), 'gray') % Observation transformation operator
+% matrix_image(S, 'Innovation Covariance Matrix', fullfile(save_path, 'S'), 'hot', clim_no2_u) % Innovation covariance matrix
+% matrix_image(K, 'Kalman Gain Matrix', fullfile(save_path, 'K'), USA, [-.5 .5]) % Determines weight of the innovation
+% matrix_image(Pa, 'Analysis Error Covariance', fullfile(save_path, 'Pa'), 'hot') % Analysis error covariance
+% create_and_save_fig_bar([diag_Pb diag_Pa], save_path, 'uncertainty_before_after', 'Variance', {'Background', 'Analysis'})
+% create_and_save_fig(test_lengths, gaspari_cohn(test_lengths./L), save_path, 'correlation_function', ['Correlation Function L=', num2str(L), ' km'], '', 'Distance (km)')
 
-make_map_fig(trop_lat_plt, trop_lon_plt, trop_no2_plt, lat_bounds, lon_bounds, fullfile(save_path, 'tropno2_orig'), 'TROPOMI NO2', clim_no2_u)
-make_map_fig(tempo_lat_plt, tempo_lon_plt, tempo_no2_plt, lat_bounds, lon_bounds, fullfile(save_path, 'tempono2_orig'), 'TEMPO NO2', clim_no2_u)
-make_map_fig(trop_lat_plt, trop_lon_plt, tempo_no2_interp_plt, lat_bounds, lon_bounds, fullfile(save_path, 'tempono2_interp'), 'Interpolated TEMPO NO2', clim_no2_u)
+% make_map_fig(trop_lat_plt, trop_lon_plt, trop_no2_plt, lat_bounds, lon_bounds, fullfile(save_path, 'tropno2_orig'), 'TROPOMI NO2', clim_no2_u)
+% make_map_fig(tempo_lat_plt, tempo_lon_plt, tempo_no2_plt, lat_bounds, lon_bounds, fullfile(save_path, 'tempono2_orig'), 'TEMPO NO2', clim_no2_u)
+% make_map_fig(trop_lat_plt, trop_lon_plt, tempo_no2_interp_plt, lat_bounds, lon_bounds, fullfile(save_path, 'tempono2_interp'), 'Interpolated TEMPO NO2', clim_no2_u)
 
-comparison_figure(tempo_lat_plt, tempo_lon_plt, tempo_no2_plt, trop_lat_plt, trop_lon_plt, trop_no2_plt, analysis_no2_plt, lat_bounds, lon_bounds, tempo_time_avg, trop_time_avg)
+% comparison_figure(tempo_lat_plt, tempo_lon_plt, tempo_no2_plt, trop_lat_plt, trop_lon_plt, trop_no2_plt, analysis_no2_plt, lat_bounds, lon_bounds, tempo_time_avg, trop_time_avg)
 
 
 %% Functions 

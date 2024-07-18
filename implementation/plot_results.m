@@ -7,7 +7,6 @@ files = dir(fullfile(results_path,'*.mat'));
 
 [filename, path] = uigetfile('/mnt/disks/data-disk/data/merged_data/');
 file = load(fullfile(path, filename));
-% file = load('/mnt/disks/data-disk/data/merged_data/TEMPO_TROPOMI_merged_20240520T181503_S10G3.mat');
 
 bg_no2 = file.save_data.bg_no2 .* 10^6;
 bg_no2_u = file.save_data.bg_no2_u .* 10^6;
@@ -17,21 +16,19 @@ bg_qa = file.save_data.bg_qa;
 bg_cld = file.save_data.bg_cld;
 bg_time = file.save_data.bg_time;
 
-bg_no2(bg_qa~=0 | bg_cld>0.2) = NaN;
 
-obs_no2 = file.save_data.obs_no2 .* 10^6;
-obs_no2_u = file.save_data.obs_no2_u .* 10^6;
-obs_lat = file.save_data.obs_lat;
-obs_lon = file.save_data.obs_lon;
+obs_no2 = file.save_data.obs_no2(:,:,2) .* 10^6;
+obs_no2_u = file.save_data.obs_no2_u(:,:,2) .* 10^6;
+obs_lat = file.save_data.obs_lat(:,:,2);
+obs_lon = file.save_data.obs_lon(:,:,2);
 obs_qa = file.save_data.obs_qa;
 obs_time = file.save_data.obs_time;
+obs_time = obs_time(1);
 
-obs_no2(obs_qa<0.75) = NaN;
 
 analysis_no2 = file.save_data.analysis_no2 .* 10^6;
 analysis_no2_u = file.save_data.analysis_no2_u .* 10^6;
 
-analysis_no2(bg_qa~=0 | bg_cld>0.2) = NaN;
 
 update = analysis_no2 - bg_no2;
 
@@ -44,8 +41,7 @@ month = 5;
 year = 2024;
 
 plot_timezone = 'America/New_York';
-day_tz = datetime(year, month, day, 'TimeZone', plot_timezone);
-day_utc = datetime(year, month, day, 'TimeZone', 'UTC');
+
 
 
 font_size = 20;
@@ -63,7 +59,7 @@ title = strjoin(['TEMPO TropNO2 Column', string(mean(bg_time)), 'UTC']);
 make_map_fig(bg_lat, bg_lon, bg_no2, lat_bounds, lon_bounds, fullfile(save_path, 'tempo'), title, cb_str, clim_no2, [], dim);
 
 title = strjoin(['TEMPO TropNO2 Uncertainty', string(mean(bg_time)), 'UTC']);
-make_map_fig(bg_lat, bg_lon, bg_no2_u, lat_bounds, lon_bounds, fullfile(save_path, 'tempo_u'), title, cb_str, [0 50], [], dim);
+make_map_fig(bg_lat, bg_lon, bg_no2_u, lat_bounds, lon_bounds, fullfile(save_path, 'tempo_u'), title, cb_str, [0 150], [], dim);
 
 
 title = strjoin(['TROPOMI TropNO2 Column', string(mean(obs_time)), 'UTC']);
