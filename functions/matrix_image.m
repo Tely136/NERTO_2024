@@ -24,6 +24,7 @@ function matrix_image(M, title_str, fullpath, cmap, clim)
     ax = gca;
     ax.XTickLabel = {};
     ax.YTickLabel = {};
+    % set(gca, 'ColorScale','log')
 
     if ~isnan(clim)
         ax.CLim = clim;

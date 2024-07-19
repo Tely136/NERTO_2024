@@ -26,7 +26,7 @@ function H = interpolation_operator(bg_lat, bg_lon, bg_lat_corners, bg_lon_corne
 
             margin = .5;
 
-            H = zeros(m,n);
+            H = sparse(m,n);
 
             for i = 1:m
                 temp_obs_lat_corners = obs_lat_corners(:,i);

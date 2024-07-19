@@ -31,7 +31,10 @@ function make_map_fig(lat, lon, param, lat_bounds, lon_bounds, fullpath,  title_
 
     hold on;
 
-    surfm(lat, lon, param)
+    for i = 1:size(param,3)
+        surfm(lat(:,:,i), lon(:,:,i), param(:,:,i))
+    end
+
     geoshow(states_low_res, "DisplayType", "polygon", 'FaceAlpha', 0);
 
     if ~isempty(markers)
