@@ -76,11 +76,11 @@ make_map_fig(bg_lat, bg_lon, update, lat_bounds, lon_bounds, fullfile(save_path,
 % make_map_fig(bg_lat, bg_lon, analysis_no2_u, lat_bounds, lon_bounds, fullfile(save_path, 'merged_u'), title, cb_str, [0 10], [], dim);
 
 
-matrix_image(bg_cor, 'Correlation Matrix', fullfile(save_path, 'C'), 'hot') % models correlation between locations in background data
-matrix_image(bg_var, 'Background Variance Matrix', fullfile(save_path, 'D'), 'hot', clim_no2_u) % Diagonal matrix of background data variances
-matrix_image(obs_var, 'Observation Covariance Matrix', fullfile(save_path, 'R'), 'hot', clim_no2_u) % Diagonal matrix of observation data variances
-matrix_image(bg_cov, 'Background Covariance Matrix', fullfile(save_path, 'Pb'), 'hot', clim_no2_u) % Background covariance data with correlation model incorporated
-matrix_image(obs_operator, 'Observation Transformation Matrix', fullfile(save_path, 'H'), 'gray') % Observation transformation operator
-% matrix_image(S, 'Innovation Covariance Matrix', fullfile(save_path, 'S'), 'hot', clim_no2_u) % Innovation covariance matrix
-matrix_image(kalman_gain, 'Kalman Gain Matrix', fullfile(save_path, 'K'), USA, [-.5 .5]) % Determines weight of the innovation
-matrix_image(ana_cov, 'Analysis Error Covariance', fullfile(save_path, 'Pa'), 'hot', [0 10]) % Analysis error covariance
+% matrix_image(bg_cor, 'Correlation Matrix', fullfile(save_path, 'C'), 'hot') % models correlation between locations in background data
+% matrix_image(bg_var, 'Background Variance Matrix', fullfile(save_path, 'D'), 'hot', clim_no2_u) % Diagonal matrix of background data variances
+% matrix_image(obs_var, 'Observation Covariance Matrix', fullfile(save_path, 'R'), 'hot', clim_no2_u) % Diagonal matrix of observation data variances
+% matrix_image(bg_cov, 'Background Covariance Matrix', fullfile(save_path, 'Pb'), 'hot', clim_no2_u) % Background covariance data with correlation model incorporated
+% matrix_image(obs_operator, 'Observation Transformation Matrix', fullfile(save_path, 'H'), 'gray') % Observation transformation operator
+% % matrix_image(S, 'Innovation Covariance Matrix', fullfile(save_path, 'S'), 'hot', clim_no2_u) % Innovation covariance matrix
+% matrix_image(kalman_gain, 'Kalman Gain Matrix', fullfile(save_path, 'K'), USA, [-.5 .5]) % Determines weight of the innovation
+% matrix_image(ana_cov, 'Analysis Error Covariance', fullfile(save_path, 'Pa'), 'hot', [0 10]) % Analysis error covariance

@@ -19,9 +19,9 @@ data_save_path = '/mnt/disks/data-disk/data/merged_data';
 % lon_bounds = [-77 -76];
 % suffix = '_TEST';
 
-% lat_bounds = [38 40]; % maryland
-% lon_bounds = [-78 -75.8];
-% suffix = '_MARYLAND';
+lat_bounds = [38 40]; % maryland
+lon_bounds = [-78 -75.8];
+suffix = '_MARYLAND';
 
 % lat_bounds = [40.4 41.3]; % new york city
 % lon_bounds = [-74.6 -72.7];
@@ -34,9 +34,9 @@ data_save_path = '/mnt/disks/data-disk/data/merged_data';
 %               [-74.6 -72.7]];
 % suffix = '';
 
-lat_bounds = [38 41.3]; % new york city
-lon_bounds = [-78 -72.7];
-suffix = '_TEST_big';
+% lat_bounds = [38 41.3]; %
+% lon_bounds = [-78 -72.7];
+% suffix = '_TEST_big';
 
 
 time_window = minutes(30);
@@ -189,7 +189,7 @@ for i = 1:length(run_days)
             dij = deg2km(dij);
 
             % Correlation matrix 
-            C = sparse(gaspari_cohn(dij ./ L));
+            C = gaspari_cohn(dij ./ L);
 
             % Background (Tempo) error covariance function
             Pb = sqrt(D)' * C * sqrt(D);
