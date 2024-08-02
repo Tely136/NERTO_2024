@@ -3,7 +3,7 @@ clearvars; clc; close all;
 plot_timezone = 'America/New_York';
 
 start_day = datetime(2024,5,20,"TimeZone", plot_timezone);
-end_day = datetime(2024,5,20, "TimeZone", plot_timezone);
+end_day = datetime(2024,8,1, "TimeZone", plot_timezone);
 
 
 tempo_files = table2timetable(tempo_table('/mnt/disks/data-disk/data/tempo_data'));
@@ -12,27 +12,28 @@ tempo_files = tempo_files(strcmp(tempo_files.Product, 'NO2'),:);
 tropomi_files = table2timetable(tropomi_table('/mnt/disks/data-disk/data/tropomi_data/'));
 tropomi_files = tropomi_files(strcmp(tropomi_files.Product, 'NO2'),:);
 
-data_save_path = '/mnt/disks/data-disk/data/merged_data';
+data_save_path = '/mnt/disks/data-disk/data/merged_data/non_temporal/working';
+% data_save_path = '/mnt/disks/data-disk/data/merged_data/non_temporal/testing';
 
 
 % lat_bounds = [39 40]; % baltimore
 % lon_bounds = [-77 -76];
 % suffix = '_TEST';
 
-lat_bounds = [38 40]; % maryland
-lon_bounds = [-78 -75.8];
-suffix = '_MARYLAND';
+% lat_bounds = [38 40]; % maryland
+% lon_bounds = [-78 -75.8];
+% suffix = '_MARYLAND';
 
 % lat_bounds = [40.4 41.3]; % new york city
 % lon_bounds = [-74.6 -72.7];
 % suffix = '_NYC';
 
-% lat_bounds = [[38 40];...
-%               [40.4 41.3]];
+lat_bounds = [[38 40];...
+              [40.4 41.3]];
 
-% lon_bounds = [[-78 -75.8];...
-%               [-74.6 -72.7]];
-% suffix = '';
+lon_bounds = [[-78 -75.8];...
+              [-74.6 -72.7]];
+suffix = '';
 
 % lat_bounds = [38 41.3]; %
 % lon_bounds = [-78 -72.7];
@@ -145,7 +146,7 @@ for i = 1:length(run_days)
                 tempo_no2(1:row,col_counter:col_counter+col-1) = tempo_data_temp.no2 ./ conversion_factor('trop-tempo');
                 tempo_no2_u(1:row,col_counter:col_counter+col-1) = tempo_data_temp.no2_u ./ conversion_factor('trop-tempo');
                 tempo_qa(1:row,col_counter:col_counter+col-1) = tempo_data_temp.qa;
-                tempo_cld(1:row,col_counter:col_counter+col-1) = tempo_data_temp.cld;
+                tempo_cld(1:row,col_counter:col_counter+col-1) = tempo_data_temp.f_cld;
                 tempo_sza(1:row,col_counter:col_counter+col-1) = tempo_data_temp.sza;
                 tempo_time(1:row,col_counter:col_counter+col-1) = resize(tempo_data_temp.time', [row,col], 'Pattern', 'circular');
 

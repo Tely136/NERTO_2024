@@ -3,12 +3,15 @@ clearvars; close all; clc;
 load('/mnt/disks/data-disk/NERTO_2024/validation/tempo_time_series_data.mat');
 load('/mnt/disks/data-disk/data/pandora_data/pandora_data.mat');
 
+cld_threshold = 1;
+sza_threshold = 90;
+
 tempo_timetable = table2timetable(data_table);
-tempo_timetable = tempo_timetable(tempo_timetable.QA==0&tempo_timetable.SZA<=70&tempo_timetable.Cld_frac<=0.2,:);
+tempo_timetable = tempo_timetable(tempo_timetable.QA==0&tempo_timetable.SZA<=sza_threshold&tempo_timetable.Cld_frac<=cld_threshold,:);
 
 pandora_timetable = table2timetable(pandora_data);
-pandora_timetable = pandora_timetable(pandora_timetable.qa==0|pandora_timetable.qa==1|pandora_timetable.qa==10|pandora_timetable.qa==11,:);
-% pandora_timetable = pandora_timetable(pandora_timetable.qa==0|pandora_timetable.qa==1|pandora_timetable.qa==2|pandora_timetable.qa==10|pandora_timetable.qa==11|pandora_timetable.qa==12,:);
+% pandora_timetable = pandora_timetable(pandora_timetable.qa==0|pandora_timetable.qa==1|pandora_timetable.qa==10|pandora_timetable.qa==11,:);
+pandora_timetable = pandora_timetable(pandora_timetable.qa==0|pandora_timetable.qa==1|pandora_timetable.qa==2|pandora_timetable.qa==10|pandora_timetable.qa==11|pandora_timetable.qa==12,:);
 
 clim = [0 10^3];
 
@@ -105,16 +108,20 @@ for k = 1:length(to_plot)
     lw = 2;
     font_size = 20;
     resolution = 300;
-    dim = [0, 0, 1800, 600];
     y_tick = [0 3 6 9 12 15 18 21 24];
 
     y_lim = [3 21];
 
     cb_str = 'tropNO2 (umol/m^2)';
 
+    % dim = [0, 0, 1800, 600];
+    dim = [0, 0, 1200, 1200];
+
     fig = figure('Visible', 'off', 'Position', dim);
 
-    tiledlayout(1,2)
+    % tiledlayout(1,2)
+    tiledlayout(2,1, "TileSpacing", 'compact', 'Padding', 'compact')
+
     nexttile
 
     I = imagesc(date_array, hour_array, tempo_mean); 

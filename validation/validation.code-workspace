@@ -1,0 +1,17 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": ".."
+		},
+		{
+			"path": "../../data"
+		},
+		{
+			"path": "../../figures/validation"
+		}
+	],
+	"settings": {}
+}

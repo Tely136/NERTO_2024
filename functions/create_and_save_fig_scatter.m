@@ -58,9 +58,11 @@ function create_and_save_fig_scatter(x_data, y_data, path, name, ttext, leg, xte
     end
 
     fontsize(font_size, 'points')
+    
+    ax = gca;
 
     save_path = fullfile(path, name);
-    print(fig, save_path, '-dpng', ['-r' num2str(resolution)])
+    exportgraphics(ax, save_path, "Resolution", resolution)
 
     close(fig);
 end

@@ -1,7 +1,7 @@
 clearvars; close all; clc;
 
-varnames = {'time', 'Site', 'Dist2Site', 'NO2', 'QA', 'Uncertainty', 'VZA', 'SZA', 'Cld_frac'};
-vartypes = {'datetime', 'string', 'double', 'double', 'double', 'double', 'double', 'double', 'double'};
+varnames = {'time', 'Site', 'Dist2Site', 'TEMPO_NO2', 'QA', 'Uncertainty', 'VZA', 'SZA', 'Cld_frac', 'filename', 'row', 'col'};
+vartypes = {'datetime', 'string', 'double', 'double', 'double', 'double', 'double', 'double', 'double', 'string', 'double', 'double'};
 
 all_coords = [[40.8153 -73.9505]; 
               [40.8679 -73.8781]; 
@@ -12,10 +12,10 @@ all_coords = [[40.8153 -73.9505];
               [38.9926 -76.8396];
               [38.9218 -77.0124];];
 
+site_names = {'ccny', 'nybg', 'queens', 'beltsville', 'essex', 'greenbelt2', 'greenbelt32', 'DC'};
+
 
 distance_threshold = km2deg(5, 'earth'); 
-
-site_names = {'ccny', 'nybg', 'queens', 'beltsville', 'essex', 'greenbelt2', 'greenbelt32', 'DC'};
 
 files_table = tempo_table('/mnt/disks/data-disk/data/tempo_data');
 files_table = files_table(contains(files_table.Filename, 'TEMPO') & strcmp(files_table.Product, 'NO2'), :);
@@ -31,42 +31,34 @@ for i = 1:size(files_table,1) % check file for tempo or tropomi and load data ac
     temp_table = files_table(i,:);
     filename = temp_table.Filename;
 
-    lat_full = ncread(filename, '/geolocation/latitude');
-    lon_full = ncread(filename, '/geolocation/longitude');
+    tempo_data = read_tempo_netcdf(temp_table);
+    no2 = tempo_data.no2;
+    no2_u = tempo_data.no2_u;
+    qa = tempo_data.qa;
+    f_cld = tempo_data.f_cld;
 
-    for j = 1:size(all_coords,1)
+    lat = tempo_data.lat;
+    lon = tempo_data.lon;
+    sza = tempo_data.sza;
+    vza = tempo_data.vza;
+    time = tempo_data.time;
+    time = resize(time, [length(time), numel(no2)/length(time)], 'Pattern', 'circular');
+
+
+    for j = 1:length(site_names)
         coords = all_coords(j,:);
         site = site_names(j);
-        % disp(site)
 
-        lat_bounds = [coords(1)-distance_threshold, coords(1)+distance_threshold];
-        lon_bounds = [coords(2)-distance_threshold, coords(2)+distance_threshold];
+        dist2site = distance(coords(1), coords(2), lat, lon);
+        ind = dist2site < distance_threshold;
 
-        [rows, cols] = get_indices2(lat_full, lon_full, lat_bounds, lon_bounds);
+        if ~isempty(ind)
 
-        if ~isempty(rows) & ~isempty(cols)
-            sat_data = read_tempo_netcdf(temp_table, rows, cols);
+            [row, col] = ind2sub(size(no2), ind);
 
-            sat_no2 = sat_data.no2(:);
-            sat_no2_u = sat_data.no2_u(:);
-            sat_qa = sat_data.qa(:);
-            sat_cld = sat_data.cld(:);
 
-            sat_lat = sat_data.lat(:);
-            sat_lon = sat_data.lon(:);
-            sat_sza = sat_data.sza(:);
-            sat_vza = sat_data.vza(:);
-            sat_time = sat_data.time;
-            sat_time = resize(sat_time, [length(sat_time), numel(sat_no2)/length(sat_time)], 'Pattern', 'circular');
-            sat_time = sat_time(:);
-
-            % change this code to save all pixels in range to table with their coordinates so that they can be filtered later and not waste time
-
-            dist = distance(sat_lat, sat_lon, coords(1), coords(2));
-            % [row, col] = ind2sub(size(sat_no2), ind);
-            site = resize(site, size(sat_time), 'Pattern', 'circular');
-
-            temp_data_table = table(sat_time, site, dist, sat_no2, sat_qa, sat_no2_u, sat_vza, sat_sza, sat_cld, 'VariableNames', varnames);
+            
+            temp_data_table = table(time(ind), repmat(site, length(find(ind)), 1), dist2site(ind), no2(ind), qa(ind), no2_u(ind), vza(ind), sza(ind), f_cld(ind), repmat(filename,length(find(ind)),1), row(ind), col(ind),  'VariableNames', varnames);
             data_table = [data_table; temp_data_table];
 
             

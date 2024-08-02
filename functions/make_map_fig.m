@@ -66,7 +66,9 @@ function make_map_fig(lat, lon, param, lat_bounds, lon_bounds, fullpath,  title_
 
     fontsize(font_size, 'points')
 
-    print(fig, fullpath, '-dpng', ['-r' num2str(resolution)])
+    % print(fig, fullpath, '-dpng', ['-r' num2str(resolution)])
+    ax = gca;
+    exportgraphics(ax, fullpath, "Resolution", resolution)
 
     close(fig);
 end

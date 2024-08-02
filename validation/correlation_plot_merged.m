@@ -28,11 +28,13 @@ end
 comparison_table = rmmissing(comparison_table);
 
 %%
+% g = fittype(@(a, x) a.*x);
+
 save_path = '/mnt/disks/data-disk/figures/validation/merged';
 bound = 600;
 
 
-y_data = [comparison_table.Tempo_NO2 comparison_table.Merged_NO2];
+y_data = [comparison_table.Tempo_NO2 comparison_table.Tropomi_NO2 comparison_table.Merged_NO2];
 x_data = repmat(comparison_table.Pandora_NO2, [1,size(y_data,2)]);
 
 [tempo_p, tempo_gof] = fit(x_data(:,1), y_data(:,1), 'poly1');
@@ -40,27 +42,22 @@ tempo_fit = feval(tempo_p, x_data(:,1));
 tempo_cor = corrcoef(comparison_table.Pandora_NO2, comparison_table.Tempo_NO2);
 tempo_cor = tempo_cor(1,2);
 
-[merged_p, merged_gof] = fit(x_data(:,2), y_data(:,2), 'poly1');
-merged_fit = feval(merged_p, x_data(:,2));
+[trop_p, trop_gof] = fit(x_data(:,2), y_data(:,2), 'poly1');
+trop_fit = feval(trop_p, x_data(:,2));
+trop_cor = corrcoef(comparison_table.Pandora_NO2, comparison_table.Tropomi_NO2);
+trop_cor = trop_cor(1,2);
+
+[merged_p, merged_gof] = fit(x_data(:,3), y_data(:,3), 'poly1');
+merged_fit = feval(merged_p, x_data(:,3));
 merged_cor = corrcoef(comparison_table.Pandora_NO2, comparison_table.Merged_NO2);
 merged_cor = merged_cor(1,2);
 
-create_and_save_fig_scatter_lines(x_data, y_data, save_path, 'test', '', {'TEMPO', 'TEMPO-TROPOMI Merged'}, 'PANDORA tropospheric NO2 (umol/m^2)', 'Satellite tropospheric NO2 (umol/m^2)', [0 bound], [0 bound], x_data, [tempo_fit merged_fit])
+% sprintf('\tSlope\tIntercept\tCorrelation')
+% sprintf('TEMPO:\t%f2', tempo_fit(1))
 
-% Do this again with a y-intercept of 0
+create_and_save_fig_scatter_lines(x_data, y_data(:,[1 3]), save_path, 'test', '', {'TEMPO', 'TEMPO-TROPOMI Merged'}, 'PANDORA tropospheric NO2 (umol/m^2)', 'Satellite tropospheric NO2 (umol/m^2)', [0 bound], [0 bound], x_data, [tempo_fit merged_fit])
 
-g = fittype(@(a, x) a.*x);
-
-[tempo_p2, tempo_gof2] = fit(x_data(:,1), y_data(:,1), g);
-tempo_fit2 = feval(tempo_p2, x_data(:,1));
-
-[merged_p2, merged_gof2] = fit(x_data(:,2), y_data(:,2), g);
-merged_fit2 = feval(merged_p2, x_data(:,2));
-
-y_data = [comparison_table.Tempo_NO2 comparison_table.Tropomi_NO2 comparison_table.Merged_NO2];
-x_data = repmat(comparison_table.Pandora_NO2, [1,size(y_data,2)]);
-
-create_and_save_fig_scatter_lines(x_data, y_data, save_path, 'test2', '', {'TEMPO', 'TROPOMI', 'TEMPO-TROPOMI Merged'}, 'PANDORA tropospheric NO2 (umol/m^2)', 'Satellite tropospheric NO2 (umol/m^2)', [0 bound], [0 bound])
+create_and_save_fig_scatter_lines(x_data, y_data, save_path, 'test2', '', {'TEMPO', 'TROPOMI', 'TEMPO-TROPOMI Merged'}, 'PANDORA tropospheric NO2 (umol/m^2)', 'Satellite tropospheric NO2 (umol/m^2)', [0 bound], [0 bound], x_data, [tempo_fit trop_fit merged_fit])
 
 
 %% Functions
@@ -98,7 +95,7 @@ function create_and_save_fig_scatter_lines(x_data, y_data, path, name, ttext, le
     fig = figure('Visible', 'off', 'Position', dim);
 
     hold on;
-    for i = 1:size(x_data,2)
+    for i = 1:size(y_data,2)
         temp_x = x_data(:,i);
         temp_y = y_data(:,i);
 
@@ -106,7 +103,7 @@ function create_and_save_fig_scatter_lines(x_data, y_data, path, name, ttext, le
     end
 
     if ~isempty(x_line) & ~isempty(y_line)
-        for i = 1:size(x_line,2)
+        for i = 1:size(y_line,2)
             temp_x = x_line(:,i);
             temp_y = y_line(:,i);
 
@@ -124,7 +121,7 @@ function create_and_save_fig_scatter_lines(x_data, y_data, path, name, ttext, le
     end
 
     if ~isempty(leg)
-        legend(leg, 'Location', 'northeast')
+        legend(leg, 'Location', 'northwest')
     end
     
     if ~isempty(ttext)

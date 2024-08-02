@@ -31,30 +31,48 @@ function tempo_data = read_tempo_netcdf(file, rows, cols)
     switch product
         case 'NO2'
             % Read the data from the netCDF file for the subgrid
+            % Product
             no2 = ncread(filename, '/product/vertical_column_troposphere', [start_row, start_col], [row_inc, col_inc]); % molec/cm^2
             no2_u = ncread(filename, '/product/vertical_column_troposphere_uncertainty', [start_row, start_col], [row_inc, col_inc]); % uncertainty in molec/cm^2
+            no2_strat = ncread(filename, '/product/vertical_column_stratosphere', [start_row, start_col], [row_inc, col_inc]);
+            qa = ncread(filename, '/product/main_data_quality_flag', [start_row, start_col], [row_inc, col_inc]);
+
+            tempo_data.no2 = no2;
+            tempo_data.no2_u = no2_u;
+            tempo_data.no2_strat = no2_strat;
+            tempo_data.qa = qa;
+
+            % Geolocation
             lat = ncread(filename, '/geolocation/latitude', [start_row, start_col], [row_inc, col_inc]);
             lon = ncread(filename, '/geolocation/longitude', [start_row, start_col], [row_inc, col_inc]);
             lat_corners = ncread(filename, '/geolocation/latitude_bounds', [1 start_row, start_col], [4 row_inc, col_inc]);
             lon_corners = ncread(filename, '/geolocation/longitude_bounds', [1 start_row, start_col], [4 row_inc, col_inc]);
             sza = ncread(filename, '/geolocation/solar_zenith_angle', [start_row, start_col], [row_inc, col_inc]);
             vza = ncread(filename, '/geolocation/viewing_zenith_angle', [start_row, start_col], [row_inc, col_inc]);
-            qa = ncread(filename, '/product/main_data_quality_flag', [start_row, start_col], [row_inc, col_inc]);
-            cld = ncread(filename, '/support_data/eff_cloud_fraction', [start_row, start_col], [row_inc, col_inc]);
             time = ncread(filename, '/geolocation/time', start_col, col_inc); 
             time = datetime(time, 'ConvertFrom', 'epochtime', 'Epoch', '1980-01-06', 'TimeZone', 'UTC');
-
-            tempo_data.no2 = no2;
-            tempo_data.no2_u = no2_u;
+            
             tempo_data.lat = lat;
             tempo_data.lon = lon;
             tempo_data.lat_corners = lat_corners;
             tempo_data.lon_corners = lon_corners;
             tempo_data.sza = sza;
             tempo_data.vza = vza;
-            tempo_data.qa = qa;
-            tempo_data.cld = cld;
             tempo_data.time = time;
+
+            % Support data
+            albedo = ncread(filename, '/support_data/albedo', [start_row, start_col], [row_inc, col_inc]);
+            amf_trop = ncread(filename, '/support_data/amf_troposphere', [start_row, start_col], [row_inc, col_inc]);
+            f_cld = ncread(filename, '/support_data/eff_cloud_fraction', [start_row, start_col], [row_inc, col_inc]);
+            surf_type = ncread(filename, '/support_data/ground_pixel_quality_flag', [start_row, start_col], [row_inc, col_inc]);
+
+            tempo_data.albedo = albedo;
+            tempo_data.amf_trop = amf_trop;
+            tempo_data.f_cld = f_cld;
+            tempo_data.surf_type = surf_type;
+
+
+        case 'CLDO4'
 
 
         case 'RAD'
