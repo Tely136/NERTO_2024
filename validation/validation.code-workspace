@@ -11,6 +11,9 @@
 		},
 		{
 			"path": "../../figures/validation"
+		},
+		{
+			"path": "../../figures/results"
 		}
 	],
 	"settings": {}

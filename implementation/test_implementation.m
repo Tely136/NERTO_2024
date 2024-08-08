@@ -2,20 +2,26 @@ clearvars; clc; close all;
 
 plot_timezone = 'America/New_York';
 
-start_day = datetime(2024,5,20,"TimeZone", plot_timezone);
-end_day = datetime(2024,8,1, "TimeZone", plot_timezone);
+% Start and end time for averaging period
+start_day = datetime(2024,6,1,"TimeZone", plot_timezone);
+end_day = datetime(2024,7,1, "TimeZone", plot_timezone);
+run_days = start_day:end_day;
 
+% Tempo scans to be processed
+scans = [8,9,10,11];
 
+% Load Tempo and Tropomi Files
 tempo_files = table2timetable(tempo_table('/mnt/disks/data-disk/data/tempo_data'));
 tempo_files = tempo_files(strcmp(tempo_files.Product, 'NO2'),:);
 
 tropomi_files = table2timetable(tropomi_table('/mnt/disks/data-disk/data/tropomi_data/'));
 tropomi_files = tropomi_files(strcmp(tropomi_files.Product, 'NO2'),:);
 
-data_save_path = '/mnt/disks/data-disk/data/merged_data/non_temporal/working';
-% data_save_path = '/mnt/disks/data-disk/data/merged_data/non_temporal/testing';
+% data_save_path = '/mnt/disks/data-disk/data/merged_data/non_temporal/working';
+data_save_path = '/mnt/disks/data-disk/data/merged_data/non_temporal/testing';
 
 
+% Lat and lon bounds for processing data
 % lat_bounds = [39 40]; % baltimore
 % lon_bounds = [-77 -76];
 % suffix = '_TEST';
@@ -30,7 +36,6 @@ data_save_path = '/mnt/disks/data-disk/data/merged_data/non_temporal/working';
 
 lat_bounds = [[38 40];...
               [40.4 41.3]];
-
 lon_bounds = [[-78 -75.8];...
               [-74.6 -72.7]];
 suffix = '';
@@ -40,30 +45,35 @@ suffix = '';
 % suffix = '_TEST_big';
 
 
+% Time window for interpolation operator, think about adding as argument to function
 time_window = minutes(30);
-L = 30; % correlation length in km
 
+% Correlation length in km
+L = 30; 
+
+% Set up dimensions for Tempo and Tropomi data
 tempo_dim = [2100, 500];
 trop_dim = [500 4200];
 
-run_days = start_day:end_day;
-scans = [8,9,10,11];
+tic; % Start timer
 
-tic;
+% Loop over each day in period
 for i = 1:length(run_days)
     current_day = run_days(i);
     day_period = timerange(current_day, current_day+days(1));
 
     disp(strjoin(['Processing data for', string(current_day)]))
 
-    tempo_files_day = tempo_files(day_period,:); % all tempo files for this day
-    trop_files_day = tropomi_files(day_period,:); % all tropomi files for this day
+    % Get all Tempo and Tropomi files on the current day
+    tempo_files_day = tempo_files(day_period,:); 
+    trop_files_day = tropomi_files(day_period,:);
 
+    % If either is empty, skip this day
     if isempty(tempo_files_day) | isempty(trop_files_day)
         continue
     end
 
-    % load all tropomi data
+    % Initialize arrays to hold full day of Tropomi data
     trop_lat = single(NaN(trop_dim(1),trop_dim(2),size(trop_files_day,1)));
     trop_lon = single(NaN(trop_dim(1),trop_dim(2),size(trop_files_day,1)));
     trop_lat_corners = single(NaN(4,trop_dim(1),trop_dim(2),size(trop_files_day,1)));
@@ -73,11 +83,11 @@ for i = 1:length(run_days)
     trop_qa = single(NaN(trop_dim(1),trop_dim(2),size(trop_files_day,1)));
     trop_time = NaT(trop_dim(1),trop_dim(2),size(trop_files_day,1), 'TimeZone', 'UTC');
 
+    % Loop over all Tropomi files on this day
     for j = 1:size(trop_files_day,1)
+        % Read the file and add contents to holding arrays
         trop_data_temp = read_tropomi_netcdf(trop_files_day(j,:));
-
         temp_lat = trop_data_temp.lat;
-
         row = size(temp_lat,1);
         col = size(temp_lat,2);
 
@@ -89,19 +99,19 @@ for i = 1:length(run_days)
         trop_no2_u(1:row,1:col,j) = trop_data_temp.no2_u;
         trop_qa(1:row,1:col,j) = trop_data_temp.qa;
         trop_time(1:row,1:col,j) = resize(trop_data_temp.time', [row,col], 'Pattern', 'circular');
-
     end
 
-    % spatial_filter = trop_lat>=lat_bounds(1) & trop_lat<=lat_bounds(2) & trop_lon>=lon_bounds(1) & trop_lon<=lon_bounds(2);
+    % Filters for lat-lon bounds and Tropomi QA value
     qa_filter = trop_qa>=0.75;
-
     spatial_filter = false(trop_dim);
     for j = 1:size(lat_bounds,1)
         spatial_filter = spatial_filter | (trop_lat>=lat_bounds(j,1) & trop_lat<=lat_bounds(j,2) & trop_lon>=lon_bounds(j,1) & trop_lon<=lon_bounds(j,2));
     end
 
+    % Find valid Tropomi indices based on filters
     valid_ind_trop = spatial_filter & qa_filter;
     
+    % Filter all Tropomi data for the day using valid indices
     trop_lat = trop_lat(valid_ind_trop);
     trop_lon = trop_lon(valid_ind_trop);
     trop_lat_corners = trop_lat_corners(:,valid_ind_trop);
@@ -110,11 +120,13 @@ for i = 1:length(run_days)
     trop_no2_u = trop_no2_u(valid_ind_trop);
     trop_time = trop_time(valid_ind_trop);
 
+    % Loop over each Tempo scan
     for j = 1:length(scans)
         scan = scans(j);
 
         disp(['Scan:', num2str(scan)])
 
+        % Initialize arrays to hold all Tempo data for the current scan
         tempo_lat = single(NaN(tempo_dim));
         tempo_lon = single(NaN(tempo_dim));
         tempo_lat_corners = single(NaN(4,tempo_dim(1),tempo_dim(2)));
@@ -128,17 +140,18 @@ for i = 1:length(run_days)
 
         col_counter = 1;
 
+        % Filter Tempo files pertaining to the current scan
         tempo_files_scan = tempo_files_day(tempo_files_day.Scan==scan,:);
-        if ~isempty(tempo_files_scan)
 
+        % If files are present for this scan, loop over them
+        if ~isempty(tempo_files_scan)
             for k = 1:size(tempo_files_scan,1)
                 tempo_data_temp = read_tempo_netcdf(tempo_files_scan(k,:));
-
                 temp_lat = tempo_data_temp.lat;
-
                 row = size(temp_lat,1);
                 col = size(temp_lat,2);
 
+                % Add data to holding arrays for current Tempo scan
                 tempo_lat(1:row,col_counter:col_counter+col-1) = tempo_data_temp.lat;
                 tempo_lon(1:row,col_counter:col_counter+col-1) = tempo_data_temp.lon;
                 tempo_lat_corners(:,1:row,col_counter:col_counter+col-1) = tempo_data_temp.lat_corners;
@@ -154,15 +167,17 @@ for i = 1:length(run_days)
             end
             clear tempo_data_temp trop_data_temp temp_lat
 
+            % Filter for lat-lon bounds, qa, clouds, and SZA for Tempo data
             qa_filter = tempo_qa==0 & tempo_cld<0.2 & tempo_sza<70;
-
             spatial_filter = false(tempo_dim);
             for k = 1:size(lat_bounds,1)
                 spatial_filter = spatial_filter | (tempo_lat>=lat_bounds(k,1) & tempo_lat<=lat_bounds(k,2) & tempo_lon>=lon_bounds(k,1) & tempo_lon<=lon_bounds(k,2));
             end
 
+            % Finding valid indices based on filters
             valid_ind_tempo = spatial_filter & qa_filter;
 
+            % Filtering Tempo data for the current scan with valid indices
             tempo_lat = tempo_lat(valid_ind_tempo);
             tempo_lon = tempo_lon(valid_ind_tempo);
             tempo_lat_corners = tempo_lat_corners(:,valid_ind_tempo);
@@ -171,6 +186,8 @@ for i = 1:length(run_days)
             tempo_no2_u = tempo_no2_u(valid_ind_tempo);
             tempo_time = tempo_time(valid_ind_tempo);
 
+            %% Beginning Kalman Filter Process
+            % Number of Tempo and Tropomi measurements to merge
             n = numel(tempo_lat);
             m = numel(trop_lat);
 
@@ -222,42 +239,34 @@ for i = 1:length(run_days)
             disp('Saving data')
             save_data = struct;
 
+            % Save Tempo data for current scan
             save_data.bg_no2 = NaN(tempo_dim);
-            save_data.bg_no2(valid_ind_tempo) = tempo_no2;
-
             save_data.bg_no2_u = NaN(tempo_dim);
-            save_data.bg_no2_u(valid_ind_tempo) = tempo_no2_u;
-
             save_data.bg_lat = NaN(tempo_dim);
-            save_data.bg_lat(valid_ind_tempo) = tempo_lat;
-
             save_data.bg_lon = NaN(tempo_dim);
+            save_data.bg_no2(valid_ind_tempo) = tempo_no2;
+            save_data.bg_no2_u(valid_ind_tempo) = tempo_no2_u;
+            save_data.bg_lat(valid_ind_tempo) = tempo_lat;
             save_data.bg_lon(valid_ind_tempo) = tempo_lon;
-
             save_data.bg_qa = tempo_qa;
             save_data.bg_cld = tempo_cld;
 
+            % Save all of current day's Tempo data
             save_data.obs_no2 = NaN([trop_dim(1),trop_dim(2),size(trop_files_day,1)]);
-            save_data.obs_no2(valid_ind_trop) = trop_no2;
-
             save_data.obs_no2_u = NaN([trop_dim(1),trop_dim(2),size(trop_files_day,1)]);
-            save_data.obs_no2_u(valid_ind_trop) = trop_no2_u;
-
             save_data.obs_lat = NaN([trop_dim(1),trop_dim(2),size(trop_files_day,1)]);
-            save_data.obs_lat(valid_ind_trop) = trop_lat;
-
             save_data.obs_lon = NaN([trop_dim(1),trop_dim(2),size(trop_files_day,1)]);
+            save_data.obs_no2(valid_ind_trop) = trop_no2;
+            save_data.obs_no2_u(valid_ind_trop) = trop_no2_u;
+            save_data.obs_lat(valid_ind_trop) = trop_lat;
             save_data.obs_lon(valid_ind_trop) = trop_lon;
-
             save_data.obs_qa = trop_qa;
 
-
+            % Save analyzed data
             save_data.analysis_no2 = NaN(tempo_dim);
-            save_data.analysis_no2(valid_ind_tempo) = Xa;
-
             save_data.analysis_no2_u = NaN(tempo_dim);
+            save_data.analysis_no2(valid_ind_tempo) = Xa;
             save_data.analysis_no2_u(valid_ind_tempo) = diag(Pa);
-
             save_data.bg_time = tempo_time;
             save_data.obs_time = trop_time;
 
@@ -268,25 +277,14 @@ for i = 1:length(run_days)
             % maybe list the present granules
             % save_data.tempo_granule = tempo_temp.Granule;
 
-            % Saved for testing:
-            save_data.obs_var = R;
-            save_data.bg_var = D;
-            save_data.bg_cor = C;
-            save_data.bg_cov = Pb;
-            save_data.obs_operator = H;
-            save_data.kalman_gain = K;
-            save_data.ana_cov = Pa;
-
-            save_data.singular = singular;
-
             savename = ['TEMPO_TROPOMI_merged_', char(datetime(current_day, 'Format', 'uuuuMMdd')), '_S', num2str(scan), suffix, '.mat'];
             save(fullfile(data_save_path, savename), "save_data", '-mat');
             disp([savename, ' saved']);
             fprintf('\n')
-
         end
     end
 end
 
+% Display processing time in minutes
 processing_time = toc./60;
 disp(['Total time: ', num2str(processing_time), ' minutes'])

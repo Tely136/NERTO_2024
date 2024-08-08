@@ -4,12 +4,12 @@ results_path = '/mnt/disks/data-disk/data/merged_data';
 save_path = '/mnt/disks/data-disk/figures/results';
 states = readgeotable('/mnt/disks/data-disk/NERTO_2024/shapefiles/cb_2023_us_state_500k/cb_2023_us_state_500k.shp');
 
-date = datetime(2024, 5, 20, 'Format', 'uuuuMMdd');
-scan = 10;
+date = datetime(2024, 6, 1, 'Format', 'uuuuMMdd');
+scan = 8;
 
 f = strjoin(['*', string(date), '_S', num2str(scan),'*.mat'],  '');
 % fileobj = dir(fullfile('/mnt/disks/data-disk/data/merged_data/temporal', f));
-fileobj = dir(fullfile('/mnt/disks/data-disk/data/merged_data/non_temporal', f));
+fileobj = dir(fullfile('/mnt/disks/data-disk/data/merged_data/non_temporal/testing', f));
 
 file = load(fullfile(fileobj.folder, fileobj.name));
 
@@ -76,11 +76,11 @@ make_map_fig(bg_lat, bg_lon, analysis_no2, lat_bounds, lon_bounds, fullfile(save
 title = 'Analysis Minus Background';
 make_map_fig(bg_lat, bg_lon, update, lat_bounds, lon_bounds, fullfile(save_path, 'update.png'), title, cb_str, [-100 100], [], dim);
 
-title = strjoin(['TEMPO TropNO2 Uncertainty', string(mean(bg_time)), 'UTC']);
-make_map_fig(bg_lat, bg_lon, bg_no2_u, lat_bounds, lon_bounds, fullfile(save_path, 'tempo_u.png'), title, cb_str, clim_no2_u, [], dim);
+% title = strjoin(['TEMPO TropNO2 Uncertainty', string(mean(bg_time)), 'UTC']);
+% make_map_fig(bg_lat, bg_lon, bg_no2_u, lat_bounds, lon_bounds, fullfile(save_path, 'tempo_u.png'), title, cb_str, clim_no2_u, [], dim);
 
-title = strjoin(['TROPOMI TropNO2 Uncertainty', string(mean(obs_time)), 'UTC']);
-make_map_fig(obs_lat, obs_lon, obs_no2_u, lat_bounds, lon_bounds, fullfile(save_path, 'tropomi_u.png'), title, cb_str, clim_no2_u, [], dim);
+% title = strjoin(['TROPOMI TropNO2 Uncertainty', string(mean(obs_time)), 'UTC']);
+% make_map_fig(obs_lat, obs_lon, obs_no2_u, lat_bounds, lon_bounds, fullfile(save_path, 'tropomi_u.png'), title, cb_str, clim_no2_u, [], dim);
 
 % title = 'Merged TropNO2 Uncertainty';
 % make_map_fig(bg_lat, bg_lon, analysis_no2_u, lat_bounds, lon_bounds, fullfile(save_path, 'merged_u'), title, cb_str, [0 10], [], dim);

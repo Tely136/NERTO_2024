@@ -61,7 +61,7 @@ while current_date <= end_date:
                 version=version,
                 temporal=(observation_start, observation_end),
                 bounding_box=bbox,
-                granule_name='*G03*'
+                granule_name='*G02*'
             )
 
         # Download granules files from NASA Earthdata
