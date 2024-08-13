@@ -21,8 +21,8 @@ files_table = tempo_table('/mnt/disks/data-disk/data/tempo_data');
 files_table = files_table(contains(files_table.Filename, 'TEMPO') & strcmp(files_table.Product, 'NO2'), :);
 
 
-data_table = table('Size', [0 length(varnames)] ,'VariableNames', varnames, 'VariableTypes', vartypes); % make table to hold satellite, pandora no2, and other info
-data_table.time.TimeZone = 'UTC';
+tempo_data_table = table('Size', [0 length(varnames)] ,'VariableNames', varnames, 'VariableTypes', vartypes); % make table to hold satellite, pandora no2, and other info
+tempo_data_table.time.TimeZone = 'UTC';
 
 for i = 1:size(files_table,1) % check file for tempo or tropomi and load data accordingly
     percent = i./size(files_table,1) * 100;
@@ -58,8 +58,8 @@ for i = 1:size(files_table,1) % check file for tempo or tropomi and load data ac
 
 
             
-            temp_data_table = table(time(ind), repmat(site, length(find(ind)), 1), dist2site(ind), no2(ind), qa(ind), no2_u(ind), vza(ind), sza(ind), f_cld(ind), repmat(filename,length(find(ind)),1), row(ind), col(ind),  'VariableNames', varnames);
-            data_table = [data_table; temp_data_table];
+            temp_tempo_data_table = table(time(ind), repmat(site, length(find(ind)), 1), dist2site(ind), no2(ind), qa(ind), no2_u(ind), vza(ind), sza(ind), f_cld(ind), repmat(filename,length(find(ind)),1), row(ind), col(ind),  'VariableNames', varnames);
+            tempo_data_table = [tempo_data_table; temp_tempo_data_table];
 
             
         else
@@ -68,8 +68,8 @@ for i = 1:size(files_table,1) % check file for tempo or tropomi and load data ac
     end
 end
 
-data_table = unique(data_table);
-data_table = rmmissing(data_table);
+tempo_data_table = unique(tempo_data_table);
+tempo_data_table = rmmissing(tempo_data_table);
 
 save_path = fullfile('/mnt/disks/data-disk/NERTO_2024/validation', 'tempo_time_series_data.mat');
-save(save_path, 'data_table');
+save(save_path, 'tempo_data_table');

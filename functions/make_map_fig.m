@@ -1,4 +1,4 @@
-function make_map_fig(lat, lon, param, lat_bounds, lon_bounds, fullpath,  title_str, cb_str, clim, markers, dim)
+function fig = make_map_fig(lat, lon, param, lat_bounds, lon_bounds, fullpath,  title_str, cb_str, clim, markers, dim, cmap)
     arguments
         lat
         lon 
@@ -11,12 +11,12 @@ function make_map_fig(lat, lon, param, lat_bounds, lon_bounds, fullpath,  title_
         clim = []
         markers = []
         dim = []
+        cmap = []
     end
 
     % lw = 2;
-    font_size = 20;
+    font_size = 30;
     resolution = 300;
-
 
     states_low_res = readgeotable("usastatehi.shp");
     % tracts = readgeotable('/mnt/disks/data-disk/NERTO_2024/shapefiles/cb_2023_24_tract_500k/cb_2023_24_tract_500k.shp');
@@ -44,14 +44,14 @@ function make_map_fig(lat, lon, param, lat_bounds, lon_bounds, fullpath,  title_
     ax = gca;
     setm(ax, 'Grid', 'off', 'MLabelParallel', 'south')
     cb = colorbar;
-    cb.Location = "southoutside";
-    cb_position = get(cb, 'Position');
-    cb_position(2) = cb_position(2) - 0.1;
-    set(cb, 'Position', cb_position)
     cb.Label.String = cb_str;
     
 
-    colormap('jet')
+    if isempty(cmap)
+        colormap('jet')
+    else
+        colormap(cmap)
+    end
 
     if ~isempty(clim)
         ax.CLim = clim;
@@ -59,10 +59,7 @@ function make_map_fig(lat, lon, param, lat_bounds, lon_bounds, fullpath,  title_
 
     hold off;
 
-    title_handle = title(title_str);
-    title_position = get(title_handle, 'Position');
-    title_position(2) = title_position(2) - 0.5;
-    set(title_handle, 'Position', title_position)
+    title(title_str);
 
     fontsize(font_size, 'points')
 

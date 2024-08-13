@@ -4,12 +4,12 @@ results_path = '/mnt/disks/data-disk/data/merged_data';
 save_path = '/mnt/disks/data-disk/figures/results';
 states = readgeotable('/mnt/disks/data-disk/NERTO_2024/shapefiles/cb_2023_us_state_500k/cb_2023_us_state_500k.shp');
 
-date = datetime(2024, 6, 1, 'Format', 'uuuuMMdd');
-scan = 8;
+date = datetime(2024, 5, 20, 'Format', 'uuuuMMdd');
+scan = 10;
 
 f = strjoin(['*', string(date), '_S', num2str(scan),'*.mat'],  '');
-% fileobj = dir(fullfile('/mnt/disks/data-disk/data/merged_data/temporal', f));
-fileobj = dir(fullfile('/mnt/disks/data-disk/data/merged_data/non_temporal/testing', f));
+fileobj = dir(fullfile('/mnt/disks/data-disk/data/merged_data/temporal/testing', f));
+% fileobj = dir(fullfile('/mnt/disks/data-disk/data/merged_data/non_temporal/testing', f));
 
 file = load(fullfile(fileobj.folder, fileobj.name));
 

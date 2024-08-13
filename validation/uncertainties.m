@@ -51,8 +51,6 @@ counter = 1;
 for i = 1:n_tempo
     tempo_data = read_tempo_netcdf(tempo_files(i,:));
 
-    % too much data, need to load lat-lon and pick regions of interest
-
     lat_temp = tempo_data.lat;
     lon_temp = tempo_data.lon;
     u_temp = tempo_data.no2_u;

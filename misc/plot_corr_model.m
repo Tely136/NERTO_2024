@@ -2,8 +2,8 @@ clearvars; clc; close all;
 
 
 % Define distances and localization radius
-distances = linspace(0, 3, 100); % Example distances
-localization_radius = 1.0; % Example localization radius
+distances = linspace(0, 100, 100); % Example distances
+localization_radius = 50; % Example localization radius
 
 % Normalize distances
 normalized_distances = distances / localization_radius;
@@ -13,13 +13,13 @@ spatial_correlation_values = gaspari_cohn(normalized_distances);
 
 
 % Define time differences
-time_differences = linspace(hours(0), hours(8), 100);
+time_differences = linspace(hours(0), hours(24), 100);
 tau = hours(8);
 
 % Normalize time differences
 normalized_times = abs(time_differences ./ tau);
 
-temporal_correlation_values = temporal_correlation(normalized_times, tau);
+temporal_correlation_values = temporal_correlation(normalized_times);
 
 
 
@@ -33,9 +33,9 @@ fig = figure('Visible', 'off', 'Position', [0 0 1200 900]);
 
 plot(distances, spatial_correlation_values, 'LineWidth', lw);
 
-xlabel('')
-ylabel('')
-title('Spatial Correlation function')
+xlabel('Distance between measurements [km]')
+ylabel('Correlation')
+title('Spatial Correlation function - Gaspari Cohn Function')
 
 fontsize(font_size, 'points')
 
@@ -52,9 +52,9 @@ fig = figure('Visible', 'off', 'Position', [0 0 1200 900]);
 
 plot(time_differences, temporal_correlation_values, 'LineWidth', lw);
 
-xlabel('')
-ylabel('')
-title('Temporal Correlation function')
+xlabel('Time difference between measurements [hours]')
+ylabel('Correlation')
+title('Temporal Correlation function - Exponential decay')
 
 fontsize(font_size, 'points')
 
