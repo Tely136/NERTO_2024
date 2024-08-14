@@ -14,14 +14,12 @@ tropomi_files = tropomi_files(strcmp(tropomi_files.Product, 'NO2'),:);
 
 % Date and time information for filtering
 plot_timezone = 'America/New_York';
-% start_day = datetime(2024,6,1,"TimeZone", plot_timezone);
-% end_day = datetime(2024,6,1,23,59,59, "TimeZone", plot_timezone);
+
 lat_bounds = [24.5 49];
 lon_bounds = [-125 -66.9];
 start_day = datetime(2024,6,1,"TimeZone", plot_timezone);
 end_day = datetime(2024,6,30, "TimeZone", plot_timezone);
-% lat_bounds = [40 42];
-% lon_bounds = [-77 -76];
+
 
 % Filter Tempo and tropomi data by time range
 time_period = timerange(start_day, end_day);

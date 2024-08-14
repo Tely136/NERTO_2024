@@ -1,13 +1,7 @@
 clearvars; close all; clc;
 
-% data_path = '/mnt/disks/data-disk/data/merged_data/temporal_on';
-% save_path = fullfile('/mnt/disks/data-disk/data/time_series', 'merged_time_series_data_temporal_on.mat');
-
-data_path = '/mnt/disks/data-disk/data/merged_data/temporal_off';
-save_path = fullfile('/mnt/disks/data-disk/data/time_series', 'merged_time_series_data_temporal_off.mat');
-
-% data_path = '/mnt/disks/data-disk/data/merged_data/temporal_strict';
-% save_path = fullfile('/mnt/disks/data-disk/data/time_series', 'merged_time_series_data_temporal_strict.mat');
+data_path = '/mnt/disks/data-disk/data/merged_data/';
+save_path = fullfile('/mnt/disks/data-disk/data/time_series', 'merged_time_series_data.mat');
 
 
 files = dir(fullfile(data_path, '*.nc'));

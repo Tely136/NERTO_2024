@@ -1,10 +1,7 @@
 clearvars; clc; close all;
 
-% data_path = '/mnt/disks/data-disk/data/merged_data/non_temporal/working';
-data_path = '/mnt/disks/data-disk/data/merged_data/temporal/working';
-
-% save_path = '/mnt/disks/data-disk/figures/results/averages/non_temporal';
-save_path = '/mnt/disks/data-disk/figures/results/averages/temporal';
+data_path = '/mnt/disks/data-disk/data/merged_data/';
+save_path = '/mnt/disks/data-disk/figures/results/averages/';
 
 files = dir(fullfile(data_path, '*.nc'));
 

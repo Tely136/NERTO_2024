@@ -1,10 +1,10 @@
 #!/bin/bash
 
-# Maryland and NYC
-#matlab -nodisplay -nosplash -r "test_implementation_func('20240601','20240607', [38 41.3], [-78 -72.7], '_TEST2'); exit"
+# Baltimore
+#matlab -nodisplay -nosplash -r "merge_no2_func('20240601','20240601', [38.75 39.75], [-77 -76]); exit"
 
-# Maryland
-#matlab -nodisplay -nosplash -r "test_implementation_func('20240601','20240607', [38 40], [-78 -75.8], '_TEST'); exit"
+# NYC and Baltimore June
+# matlab -nodisplay -nosplash -r "merge_no2_func('20240601','20240630', [[38.75 39.75];[40.4 41.3]], [[-77.5 -76];[-74.5 -73.3]]); exit"
 
-# DC, Baltimore, NYC
-matlab -nodisplay -nosplash -r "test_implementation_func('20240601','20240607', [[40 41.5];[39 40];[38.5 39.5]], [[-75 -73];[-77 -76];[-78 -76]], '_TEST'); exit"
+# NYC and Baltimore July
+matlab -nodisplay -nosplash -r "merge_no2_func('20240701','20240731', [[38.75 39.75];[40.4 41.3]], [[-77.5 -76];[-74.5 -73.3]]); exit"

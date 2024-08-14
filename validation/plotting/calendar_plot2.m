@@ -1,6 +1,7 @@
 clearvars; close all; clc;
 
-% TODO: add dummy data one month before and after final data in arrays before executing retime function
+% TODO: change this to take tempo data from merged product files
+% TODO: create seperate figure for tempo-pandora comparison and update with different color limit
 
 save_folder = '/mnt/disks/data-disk/figures/validation/calendar/';
 load('/mnt/disks/data-disk/data/time_series/merged_time_series_data.mat');
@@ -126,95 +127,56 @@ for year_i = 1:length(years)
             tempo_alpha = zeros([24 n_days]);
 
             merged_mean = NaN([24 n_days]);
+            merged_alpha = zeros([24 n_days]);
 
             pandora_mean = NaN(dim);
             pandora_alpha = zeros(dim);
-            date_array = NaT("TimeZone", "America/New_York");
             hour_array = 0:23;
+            date_array = start_day:days(1):start_day+days(n_days-1);
+            date_array.TimeZone = "America/New_York";
+
+            mins_array = 0:minutes(bin_mins):hours(24)-minutes(bin_mins);
 
             % Loop over each day
             count = 1;
-            for j = 1:size(tempo_mean, 2)
-                date_array(j) = start_day + j - 1;
+            for j = 1:n_days
+                for k = hour_array
+                    current_datetime = date_array(j) + hours(k);
+                    tempo_no2 = tempo_site_mean_highqa(tempo_site_mean_highqa.Time==current_datetime,:).Var1;
+                    tempo_no2_lowqa = tempo_site_mean(tempo_site_mean.Time==current_datetime,:).Var1;
 
-                % Tempo Loop over each time bin
-                for i = 1:size(tempo_mean, 1)
-                    temp_tempo = tempo_site_mean.Var1(count);
-                    temp_tempo_high_qa = tempo_site_mean_highqa.Var1(count);
+                    merged_no2 = merged_site_mean(merged_site_mean.Time==current_datetime,:).Var1;
 
-                    % If data is present add it to the array that will be plotted
-                    if ~isnan(temp_tempo_high_qa)
-                        tempo_mean(i,j) = temp_tempo_high_qa ./ conversion_factor('trop-tempo') * 10^6;
-                        tempo_alpha(i,j) = 1;
-
-                    elseif ~isnan(temp_tempo)
-                        tempo_mean(i,j) = temp_tempo ./ conversion_factor('trop-tempo') * 10^6;
-                        tempo_alpha(i,j) = lowqa_alpha;
-
+                    if ~isempty(tempo_no2) & ~isnan(tempo_no2)
+                        tempo_mean(k+1,j) = 10^6 * tempo_no2 / conversion_factor('trop-tempo');
+                        tempo_alpha(k+1,j) = 1;
+                    elseif ~isempty(tempo_no2_lowqa) & ~isnan(tempo_no2_lowqa)
+                        tempo_mean(k+1,j) = 10^6 * tempo_no2_lowqa / conversion_factor('trop-tempo');
+                        tempo_alpha(k+1,j) = lowqa_alpha;
                     end
 
-                    % Break out of loop if at the end
-                    if count == size(tempo_site_mean,1)
-                        break
-                    else
-                        count = count + 1;
+                    if ~isempty(merged_no2) & ~isnan(merged_no2)
+                        merged_mean(k+1,j) = 10^6 * merged_no2;
+                        merged_alpha(k+1,j) = 1;
                     end
                 end
-                if count == size(tempo_site_mean)
-                    break
+
+                for k = 1:size(pandora_mean,1)
+                    current_datetime = date_array(j) + mins_array(k);
+                    pandora_no2 = pandora_site_mean_highqa(pandora_site_mean_highqa.Time==current_datetime,:).Var1;
+                    pandora_no2_lowqa = pandora_site_mean(pandora_site_mean.Time==current_datetime,:).Var1;
+
+                    if ~isempty(pandora_no2) & ~isnan(pandora_no2)
+                        pandora_mean(k+1,j) = 10^6 * pandora_no2;
+                        pandora_alpha(k+1,j) = 1;
+                    elseif ~isempty(pandora_no2_lowqa) & ~isnan(pandora_no2_lowqa)
+                        pandora_mean(k+1,j) = 10^6 * pandora_no2_lowqa;
+                        pandora_alpha(k+1,j) = lowqa_alpha;
+                    end
                 end
             end
 
-            count = 1;
-            for j = 1:size(merged_mean, 2)
-                date_array(j) = start_day + j - 1;
-
-                for i = 1:size(merged_mean, 1)
-                    temp_merged = merged_site_mean.Var1(count);
-
-                    % If data is present add it to the array that will be plotted
-                    if ~isnan(temp_merged)
-                        merged_mean(i,j) = temp_merged * 10^6;
-                    end
-
-                    % Break out of loop if at the end
-                    if count == size(merged_site_mean,1)
-                        break
-                    else
-                        count = count + 1;
-                    end
-                end
-                if count == size(merged_site_mean)
-                    break
-                end
-            end
-
-            count = 1;
-            for j = 1:size(pandora_mean, 2)
-                date_array(j) = start_day + j -1;
-
-                for i = 1:size(pandora_mean ,1)
-                    temp_pandora = pandora_site_mean.Var1(count);
-                    temp_pandora_highqa = pandora_site_mean_highqa.Var1(count);
-
-                    if ~isnan(temp_pandora_highqa)
-                        pandora_mean(i,j) = temp_pandora_highqa * 10^6;
-                        pandora_alpha(i,j) = 1;
-
-                    elseif ~isnan(temp_pandora)
-                        pandora_mean(i,j) = temp_pandora * 10^6;
-                        pandora_alpha(i,j) = lowqa_alpha;
-                    end
-                
-                    count = count + 1;
-                    if count==numel(pandora_site_mean.Var1)
-                        break
-                    end
-                end
-                if count==numel(pandora_site_mean.Var1)
-                    break
-                end
-            end
+            update = merged_mean - tempo_mean;
 
             %%
             lw = 2;
@@ -225,9 +187,9 @@ for year_i = 1:length(years)
 
             cb_str = 'tropNO2 (umol/m^2)';
 
-            dim = [0, 0, 1000, 1000];
+            pltdim = [0, 0, 1000, 1000];
 
-            fig = figure('Visible', 'off', 'Position', dim);
+            fig = figure('Visible', 'off', 'Position', pltdim);
 
             tiledlayout(2,2, "TileSpacing", 'compact', 'Padding', 'compact')
 
@@ -243,7 +205,6 @@ for year_i = 1:length(years)
             ax = gca;
             ax.YDir = 'normal';
             ax.CLim = clims(ind,:);
-            % set(I, 'AlphaData', ~isnan(tempo_mean))
             set(I, 'AlphaData', tempo_alpha)
 
             nexttile
@@ -273,6 +234,20 @@ for year_i = 1:length(years)
             ax.YDir = 'normal';
             ax.CLim = clims(ind,:);
             set(I, 'AlphaData', pandora_alpha)
+
+            nexttile
+            I = imagesc(date_array, hour_array, update); 
+            title("Update")
+            xticks(date_array)
+            xtickformat('eeeee')
+            xtickangle(0)
+            yticks(y_tick)
+            ylim(y_lim)
+            ylabel('Local Time')
+            ax = gca;
+            ax.YDir = 'normal';
+            ax.CLim = clims(ind,:);
+            set(I, 'AlphaData', merged_alpha)
 
             cb = colorbar;
             cb.Layout.Tile = 'south';

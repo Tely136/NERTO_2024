@@ -1,15 +1,9 @@
 clearvars; clc; close all;
 
-% data_path = '/mnt/disks/data-disk/data/merged_data/temporal_on';
-% figures_path = '/mnt/disks/data-disk/figures/results/temporal_on';
+data_path = '/mnt/disks/data-disk/data/merged_data/';
+figures_path = '/mnt/disks/data-disk/figures/results/';
 
-% data_path = '/mnt/disks/data-disk/data/merged_data/temporal_off/';
-% figures_path = '/mnt/disks/data-disk/figures/results/temporal_off';
-
-data_path = '/mnt/disks/data-disk/data/merged_data/temporal_strict/';
-figures_path = '/mnt/disks/data-disk/figures/results/temporal_strict';
-
-states = readgeotable('/mnt/disks/data-disk/NERTO_2024/shapefiles/cb_2023_us_state_500k/cb_2023_us_state_500k.shp');
+states = readgeotable('/mnt/disks/data-disk/NERTO_2024/misc/shapefiles/cb_2023_us_state_500k/cb_2023_us_state_500k.shp');
 
 plot_timezone = 'America/New_York';
 start_day = datetime(2024,6,1,"TimeZone", plot_timezone);
