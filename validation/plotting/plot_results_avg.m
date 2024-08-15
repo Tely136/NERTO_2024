@@ -1,21 +1,34 @@
-clearvars; clc; close all;
+function plot_results_avg(start_date, end_date, lat_bounds, lon_bounds, options)
+    arguments
+        start_date string
+        end_date string
+        lat_bounds double
+        lon_bounds double
+        options.save_path char = '/mnt/disks/data-disk/figures/results/averages'
+    end
+
+timezone = 'America/New_York';
+
+start_date = datetime(start_date, "InputFormat", 'uuuuMMdd', 'TimeZone', timezone);
+end_date = datetime(end_date, "InputFormat", 'uuuuMMdd', 'TimeZone', timezone);
+run_days = start_date:end_date;
+
+save_foldername = strjoin([string(start_date), string(end_date)], '_');
 
 data_path = '/mnt/disks/data-disk/data/merged_data/';
-save_path = '/mnt/disks/data-disk/figures/results/averages/';
+save_path = fullfile(options.save_path, save_foldername);
+
+if ~exist(save_path, 'dir')
+    mkdir(save_path)
+end
 
 files = dir(fullfile(data_path, '*.nc'));
 
-states = readgeotable('/mnt/disks/data-disk/NERTO_2024/shapefiles/cb_2023_us_state_500k/cb_2023_us_state_500k.shp');
-
-plot_timezone = 'America/New_York';
-
-start_day = datetime(2024,6,1,0,0,0, 'TimeZone', plot_timezone);
-end_day = datetime(2024,7,1, 'TimeZone', plot_timezone);
-
+load('/mnt/disks/data-disk/NERTO_2024/misc/USA.mat'); %#ok<LOAD>
 
 % Regular grid
-grid_lat = 38:0.1:42;
-grid_lon = -78:0.1:-72;
+grid_lat = lat_bounds(1):0.05:lat_bounds(2);
+grid_lon = lon_bounds(1):0.05:lon_bounds(2);
 
 % Create meshgrid for the regular grid
 [lon_grid, lat_grid] = meshgrid(grid_lon, grid_lat);
@@ -38,9 +51,9 @@ analysis_counter = zeros(tempo_dim);
 for i = 1:length(files)
     name = files(i).name;
     name_splt = strsplit(name, '_');
-    date = datetime(string(name_splt{4}), "Format", "uuuuMMdd", "TimeZone", plot_timezone);
+    date = datetime(string(name_splt{4}), "Format", "uuuuMMdd", "TimeZone", timezone);
 
-    if date >= start_day && date < end_day
+    if ismember(date, run_days)
         file_path = fullfile(files(i).folder, name);
 
         % Update tempo data and counter
@@ -93,26 +106,32 @@ analysis_no2(analysis_counter > 0) = 10^6 .* analysis_no2_sum(analysis_counter >
 
 update = analysis_no2 - tempo_no2;
 
-lat_bounds = [min(tempo_lat(valid_tempo)) max(tempo_lat(valid_tempo))];
-lon_bounds = [min(tempo_lon(valid_tempo)) max(tempo_lon(valid_tempo))];
+tempo_F = scatteredInterpolant(tempo_lon(tempo_counter > 0), tempo_lat(tempo_counter > 0), tempo_no2(tempo_counter > 0), 'linear', 'none');
+tempo_reg = tempo_F(lon_grid, lat_grid);
 
-font_size = 20;
-resolution = 300;
-dim = [0, 0, 900, 1000];
-lw = 2;
+trop_tempo_diff = trop_no2 - tempo_reg;
+
+
+dim = [0, 0, 1000, 1000];
 
 clim_no2 = [0 300];
-clim_no2_u = [0 100];
+% clim_no2_u = [0 100];
 cb_str = 'umol/m^2';
 
-title_str = sprintf('Average TEMPO TropNO2 Column \n %s - %s', string(start_day), string(end_day - days(1)));
+title_str = sprintf('Average TEMPO TropNO2 Column \n %s - %s', string(start_date), string(end_date));
 make_map_fig(tempo_lat, tempo_lon, tempo_no2, lat_bounds, lon_bounds, fullfile(save_path, 'avg_tempo.png'), title_str, cb_str, clim_no2, [], dim);
 
-title_str = sprintf('Average TROPOMI TropNO2 Column \n %s - %s', string(start_day), string(end_day - days(1)));
+title_str = sprintf('Average TROPOMI TropNO2 Column \n %s - %s', string(start_date), string(end_date));
 make_map_fig(lat_grid, lon_grid, trop_no2, lat_bounds, lon_bounds, fullfile(save_path, 'avg_tropomi.png'), title_str, cb_str, clim_no2, [], dim);
 
 title_str = 'Average Merged TropNO2 Column';
 make_map_fig(tempo_lat, tempo_lon, analysis_no2, lat_bounds, lon_bounds, fullfile(save_path, 'avg_merged.png'), title_str, cb_str, clim_no2, [], dim);
 
 title_str = 'Merged Minus TEMPO';
-make_map_fig(tempo_lat, tempo_lon, update, lat_bounds, lon_bounds, fullfile(save_path, 'update.png'), title_str, cb_str, [-100 100], [], dim);
+make_map_fig(tempo_lat, tempo_lon, update, lat_bounds, lon_bounds, fullfile(save_path, 'update.png'), title_str, cb_str, [-100 100], [], dim, USA);
+
+title_str = sprintf('Average TEMPO TropNO2 Column - Regular Grid \n %s - %s', string(start_date), string(end_date));
+make_map_fig(lat_grid, lon_grid, tempo_reg, lat_bounds, lon_bounds, fullfile(save_path, 'avg_tempo_reg.png'), title_str, cb_str, clim_no2, [], dim);
+
+title_str = sprintf('Tropomi - TEMPO \n %s - %s', string(start_date), string(end_date));
+make_map_fig(lat_grid, lon_grid, trop_tempo_diff, lat_bounds, lon_bounds, fullfile(save_path, 'trop_tempo_diff.png'), title_str, cb_str, [-100 100], [], dim, USA);

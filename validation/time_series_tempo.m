@@ -1,7 +1,7 @@
 clearvars; close all; clc;
 
-varnames = {'time', 'Site', 'Dist2Site', 'TEMPO_NO2', 'QA', 'Uncertainty', 'VZA', 'SZA', 'Cld_frac', 'filename', 'row', 'col'};
-vartypes = {'datetime', 'string', 'double', 'double', 'double', 'double', 'double', 'double', 'double', 'string', 'double', 'double'};
+varnames = {'time', 'Site', 'Dist2Site', 'TEMPO_NO2', 'Uncertainty', 'filename', 'row', 'col'};
+vartypes = {'datetime', 'string', 'double', 'double', 'double', 'string', 'double', 'double'};
 
 all_coords = [[40.8153 -73.9505]; 
               [40.8679 -73.8781]; 
@@ -28,21 +28,15 @@ for i = 1:size(files_table,1) % check file for tempo or tropomi and load data ac
     percent = i./size(files_table,1) * 100;
     disp([num2str(percent), '%'])
 
-    temp_table = files_table(i,:);
-    filename = temp_table.Filename;
+    filepath = fullfile(files(i).folder, files(i).name);
 
-    tempo_data = read_tempo_netcdf(temp_table);
-    no2 = tempo_data.no2;
-    no2_u = tempo_data.no2_u;
-    qa = tempo_data.qa;
-    f_cld = tempo_data.f_cld;
+    no2 = ncread(filepath, '/tempo/analysis_no2');
+    no2_u = ncread(filepath, '/tempo/analysis_no2_u');
 
-    lat = tempo_data.lat;
-    lon = tempo_data.lon;
-    sza = tempo_data.sza;
-    vza = tempo_data.vza;
-    time = tempo_data.time;
-    time = resize(time, [length(time), numel(no2)/length(time)], 'Pattern', 'circular');
+    lat = ncread(filepath, '/tempo/tempo_lat');
+    lon = ncread(filepath, '/tempo/tempo_lon');
+    time = ncread(filepath, '/tempo/tempo_time');
+    time = datetime(time, "ConvertFrom", "posixtime", 'TimeZone', 'UTC');
 
 
     for j = 1:length(site_names)
@@ -56,12 +50,8 @@ for i = 1:size(files_table,1) % check file for tempo or tropomi and load data ac
 
             [row, col] = ind2sub(size(no2), ind);
 
-
-            
             temp_tempo_data_table = table(time(ind), repmat(site, length(find(ind)), 1), dist2site(ind), no2(ind), qa(ind), no2_u(ind), vza(ind), sza(ind), f_cld(ind), repmat(filename,length(find(ind)),1), row(ind), col(ind),  'VariableNames', varnames);
             tempo_data_table = [tempo_data_table; temp_tempo_data_table];
-
-            
         else
             continue
         end

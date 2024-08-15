@@ -1,18 +1,23 @@
-clearvars; clc; close all;
+function plot_results(start_date, end_date, lat_bounds, lon_bounds, options)
+    arguments
+        start_date string
+        end_date string
+        lat_bounds double
+        lon_bounds double
+        options.save_path char = '/mnt/disks/data-disk/figures/results/'
+    end
+
 
 data_path = '/mnt/disks/data-disk/data/merged_data/';
-figures_path = '/mnt/disks/data-disk/figures/results/';
 
-states = readgeotable('/mnt/disks/data-disk/NERTO_2024/misc/shapefiles/cb_2023_us_state_500k/cb_2023_us_state_500k.shp');
 
 plot_timezone = 'America/New_York';
-start_day = datetime(2024,6,1,"TimeZone", plot_timezone);
-end_day = datetime(2024,6,1, "TimeZone", plot_timezone);
-plot_days = start_day:end_day;
+start_date = datetime(start_date, "InputFormat", 'uuuuMMdd', 'TimeZone', plot_timezone);
+end_date = datetime(end_date, "InputFormat", 'uuuuMMdd', 'TimeZone', plot_timezone);
+plot_days = start_date:end_date;
 
 load('/mnt/disks/data-disk/NERTO_2024/misc/USA.mat');
 
-filetype = 'netcdf';
 
 font_size = 20;
 resolution = 300;
@@ -22,7 +27,7 @@ lw = 2;
 for i = 1:length(plot_days)
     date = datetime(plot_days(i), "Format", "uuuuMMdd");
 
-    save_path = fullfile(figures_path, string(date));
+    save_path = fullfile(options.save_path, string(date));
     if ~exist(save_path, "dir")
         mkdir(save_path)
     end
@@ -71,8 +76,6 @@ for i = 1:length(plot_days)
 
             update = analysis_no2 - tempo_no2;
             
-            lat_bounds = [min(tempo_lat(~isnan(analysis_no2))) max(tempo_lat(~isnan(analysis_no2)))];
-            lon_bounds = [min(tempo_lon(~isnan(analysis_no2))) max(tempo_lon(~isnan(analysis_no2)))];
 
             plot_timezone = 'America/New_York';
 

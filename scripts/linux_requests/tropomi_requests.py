@@ -4,8 +4,8 @@ from pathlib import Path
 from datetime import datetime, timedelta
 
 # Define the start and end dates for the range
-start_date = '2023-08-01'
-end_date = '2023-09-01'
+start_date = '2023-12-01'
+end_date = '2023-12-31'
 
 # Convert to datetime objects
 start_date = datetime.strptime(start_date, '%Y-%m-%d')

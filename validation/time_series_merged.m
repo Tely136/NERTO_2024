@@ -4,10 +4,8 @@ data_path = '/mnt/disks/data-disk/data/merged_data/';
 save_path = fullfile('/mnt/disks/data-disk/data/time_series', 'merged_time_series_data.mat');
 
 
-files = dir(fullfile(data_path, '*.nc'));
-
-varnames = {'time', 'Site', 'Dist2Site', 'Merged_NO2', 'Uncertainty', 'filename', 'row', 'col'};
-vartypes = {'datetime', 'string', 'double', 'double', 'double', 'string', 'double', 'double'};
+varnames = {'time', 'Site', 'Dist2Site', 'TEMPO_NO2', 'Merged_NO2', 'TEMPO_Uncertainty', 'Merged_Uncertainty', 'filename', 'row', 'col'};
+vartypes = {'datetime', 'string', 'double', 'double', 'double', 'double', 'double', 'string', 'double', 'double'};
 
 all_coords = [[40.8153 -73.9505]; 
               [40.8679 -73.8781]; 
@@ -20,11 +18,20 @@ all_coords = [[40.8153 -73.9505];
 
 site_names = {'ccny', 'nybg', 'queens', 'beltsville', 'essex', 'greenbelt2', 'greenbelt32', 'DC'};
 
-
 distance_threshold = km2deg(5, 'earth'); 
 
-merged_data_table = table('Size', [0 length(varnames)] ,'VariableNames', varnames, 'VariableTypes', vartypes); % make table to hold satellite, pandora no2, and other info
-merged_data_table.time.TimeZone = 'UTC';
+if exist(save_path, "file")
+    load(save_path);
+else
+    merged_data_table = table('Size', [0 length(varnames)] ,'VariableNames', varnames, 'VariableTypes', vartypes); % make table to hold satellite, pandora no2, and other info
+    merged_data_table.time.TimeZone = 'UTC';
+end
+
+all_files = dir(fullfile(data_path, '*.nc'));
+
+all_filenames = fullfile({all_files.folder}, {all_files.name});
+files = all_files(~ismember(all_filenames, merged_data_table.filename));
+
 
 for i = 1:size(files,1) % check file for tempo or tropomi and load data accordingly
     percent = i./size(files,1) * 100;
@@ -32,8 +39,11 @@ for i = 1:size(files,1) % check file for tempo or tropomi and load data accordin
 
     filepath = fullfile(files(i).folder, files(i).name);
 
-    no2 = ncread(filepath, '/analysis/analysis_no2');
-    no2_u = ncread(filepath, '/analysis/analysis_no2_u');
+    tempo_no2 = ncread(filepath, '/tempo/tempo_no2');
+    tempo_no2_u = ncread(filepath, '/tempo/tempo_no2_u');
+
+    merged_no2 = ncread(filepath, '/analysis/analysis_no2');
+    merged_no2_u = ncread(filepath, '/analysis/analysis_no2_u');
 
     lat = ncread(filepath, '/tempo/tempo_lat');
     lon = ncread(filepath, '/tempo/tempo_lon');
@@ -48,15 +58,19 @@ for i = 1:size(files,1) % check file for tempo or tropomi and load data accordin
         ind = dist2site < distance_threshold;
 
         if ~isempty(ind)
-            [row, col] = ind2sub(size(no2), find(ind));
+            [row, col] = ind2sub(size(merged_no2), find(ind));
 
-            temp_merged_data_table = table(time(col)', repmat(site, length(find(ind)), 1), dist2site(ind), no2(ind),  no2_u(ind), repmat(filepath,length(find(ind)),1), row, col,  'VariableNames', varnames);
+            temp_merged_data_table = table(time(col)', repmat(site, length(find(ind)), 1), dist2site(ind), tempo_no2(ind), merged_no2(ind), tempo_no2_u(ind), merged_no2_u(ind), repmat(filepath,length(find(ind)),1), row, col,  'VariableNames', varnames);
             merged_data_table = [merged_data_table; temp_merged_data_table];
 
         else
             continue
         end
     end
+
+    % if i == 10
+    %     break
+    % end
 end
 
 merged_data_table = unique(merged_data_table);
