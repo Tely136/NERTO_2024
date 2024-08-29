@@ -8,7 +8,7 @@ function plot_results(start_date, end_date, lat_bounds, lon_bounds, options)
     end
 
 
-data_path = '/mnt/disks/data-disk/data/merged_data/';
+data_path = '/mnt/disks/results-disk/merged_data/';
 
 
 plot_timezone = 'America/New_York';
@@ -16,13 +16,13 @@ start_date = datetime(start_date, "InputFormat", 'uuuuMMdd', 'TimeZone', plot_ti
 end_date = datetime(end_date, "InputFormat", 'uuuuMMdd', 'TimeZone', plot_timezone);
 plot_days = start_date:end_date;
 
-load('/mnt/disks/data-disk/NERTO_2024/misc/USA.mat');
+load('/mnt/disks/data-disk/NERTO_2024/misc/USA.mat'); %#ok<LOAD>
 
 
-font_size = 20;
-resolution = 300;
+% font_size = 20;
+% resolution = 300;
 dim = [0, 0, 1000, 1000];
-lw = 2;
+% lw = 2;
 
 for i = 1:length(plot_days)
     date = datetime(plot_days(i), "Format", "uuuuMMdd");
@@ -45,31 +45,31 @@ for i = 1:length(plot_days)
             file = fullfile(fileobj.folder, fileobj.name);
 
             tempo_no2 = ncread(file, '/tempo/tempo_no2') .* 10^6;
-            tempo_no2_u = ncread(file, '/tempo/tempo_no2_u') .* 10^6;
+            % tempo_no2_u = ncread(file, '/tempo/tempo_no2_u') .* 10^6;
             tempo_lat = ncread(file, '/tempo/tempo_lat');
             tempo_lon = ncread(file, '/tempo/tempo_lon');
             tempo_time = ncread(file, '/tempo/tempo_time');
-            tempo_time = datetime(tempo_time, "ConvertFrom", "posixtime");
+            tempo_time = datetime(tempo_time, "ConvertFrom", "posixtime", "TimeZone", 'UTC');
             tempo_valid_ind = ncread(file, '/tempo/tempo_valid_ind');
 
             tropomi_no2 = ncread(file, '/tropomi/tropomi_no2') .* 10^6;
-            tropomi_no2_u = ncread(file, '/tropomi/tropomi_no2_u') .* 10^6;
+            % tropomi_no2_u = ncread(file, '/tropomi/tropomi_no2_u') .* 10^6;
             tropomi_lat = ncread(file, '/tropomi/tropomi_lat');
             tropomi_lon = ncread(file, '/tropomi/tropomi_lon');
             tropomi_time = ncread(file, '/tropomi/tropomi_time');
-            tropomi_time = datetime(tropomi_time, 'ConvertFrom', "posixtime");
+            tropomi_time = datetime(tropomi_time, 'ConvertFrom', "posixtime", "TimeZone", 'UTC');
             tropomi_valid_ind = ncread(file, '/tropomi/tropomi_valid_ind');
 
             analysis_no2 = ncread(file, '/analysis/analysis_no2') .* 10^6;
-            analysis_no2_u = ncread(file, '/analysis/analysis_no2_u') .* 10^6;
+            % analysis_no2_u = ncread(file, '/analysis/analysis_no2_u') .* 10^6;
 
             scan = ncread(file, 'scan');
 
             tempo_no2(~tempo_valid_ind) = NaN;
-            tempo_no2_u(~tempo_valid_ind) = NaN;
+            % tempo_no2_u(~tempo_valid_ind) = NaN;
 
             tropomi_no2(~tropomi_valid_ind) = NaN;
-            tropomi_no2_u(~tropomi_valid_ind) = NaN;
+            % tropomi_no2_u(~tropomi_valid_ind) = NaN;
 
             disp(['Tempo Scan: ', num2str(scan)])
 
@@ -78,13 +78,15 @@ for i = 1:length(plot_days)
             
 
             plot_timezone = 'America/New_York';
+            tempo_time.TimeZone = plot_timezone;
+            tropomi_time.TimeZone = plot_timezone;
 
             clim_no2 = [0 300];
-            clim_no2_u = [0 50];
+            % clim_no2_u = [0 50];
 
             cb_str = 'umol/m^2';
 
-            title = strjoin(['TEMPO TropNO2 Column', newline, string(mean(tempo_time, 'omitmissing')), 'UTC']);
+            title = strjoin(['TEMPO TropNO2 Column', newline, string(mean(tempo_time, 'omitmissing')), 'EST']);
             make_map_fig(tempo_lat, tempo_lon, tempo_no2, lat_bounds, lon_bounds, fullfile(save_path, strjoin([string(date), '_S', num2str(scan), '_', 'tempo.png'], '')), title, cb_str, clim_no2, [], dim);
 
             title = 'Merged TropNO2 Column';
@@ -93,10 +95,10 @@ for i = 1:length(plot_days)
             title = 'Analysis Minus Background';
             make_map_fig(tempo_lat, tempo_lon, update, lat_bounds, lon_bounds, fullfile(save_path, strjoin([string(date), '_S', num2str(scan), '_', 'update.png'], '')), title, cb_str, [-100 100], [], dim, USA);
 
-            % title = strjoin(['TEMPO TropNO2 Uncertainty', string(mean(tempo_time)), 'UTC']);
+            % title = strjoin(['TEMPO TropNO2 Uncertainty', string(mean(tempo_time)), 'EST']);
             % make_map_fig(tempo_lat, tempo_lon, tempo_no2_u, lat_bounds, lon_bounds, fullfile(save_path, strjoin([string(date), '_S', num2str(scan), '_', 'tempo_u.png'], '')), title, cb_str, clim_no2_u, [], dim);
 
-            % title = strjoin(['TROPOMI TropNO2 Uncertainty', string(mean(tropomi_time)), 'UTC']);
+            % title = strjoin(['TROPOMI TropNO2 Uncertainty', string(mean(tropomi_time)), 'EST']);
             % make_map_fig(tropomi_lat, tropomi_lon, tropomis_no2_u, lat_bounds, lon_bounds, fullfile(save_path, strjoin([string(date), '_S', num2str(scan), '_', 'tropomi_u.png'], '')), title, cb_str, clim_no2_u, [], dim);
 
             % title = 'Merged TropNO2 Uncertainty';
@@ -107,7 +109,7 @@ for i = 1:length(plot_days)
             if ~all(isnan(tropomi_no2(:,:,j)), 'all')
                 disp(['Tropomi Scan: ', num2str(j)])
 
-                title = strjoin(['TROPOMI TropNO2 Column', newline, string(mean(tropomi_time(:,:,j), 'omitmissing')), 'UTC']);
+                title = strjoin(['TROPOMI TropNO2 Column', newline, string(mean(tropomi_time(:,:,j), 'omitmissing')), 'EST']);
                 make_map_fig(tropomi_lat(:,:,j), tropomi_lon(:,:,j), tropomi_no2(:,:,j), lat_bounds, lon_bounds, fullfile(save_path, strjoin([string(date), '_G', num2str(j), '_', 'tropomi.png'], '')), title, cb_str, clim_no2, [], dim);
             end
         end
@@ -182,13 +184,13 @@ for i = 1:length(plot_days)
                 update_imgs(:,:,:,j) = update_img;
             end
 
-            [tempo_scans,I] = sort(tempo_scans);
+            [~,I] = sort(tempo_scans);
             tempo_imgs = tempo_imgs(:,:,:,I);
 
-            [analysis_scans,I] = sort(analysis_scans);
+            [~,I] = sort(analysis_scans);
             analysis_imgs = analysis_imgs(:,:,:,I);
 
-            [update_scans,I] = sort(update_scans);
+            [~,I] = sort(update_scans);
             update_imgs = update_imgs(:,:,:,I);
 
             fig = figure("Visible", "off");

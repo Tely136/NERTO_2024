@@ -4,7 +4,7 @@ function merge_no2(start_date, end_date, lat_bounds, lon_bounds, options)
         end_date string
         lat_bounds double
         lon_bounds double
-        options.data_save_path char = '/mnt/disks/data-disk/data/merged_data/'
+        options.data_save_path char = '/mnt/disks/results-disk/merged_data/'
         options.suffix char = ''
     end
 

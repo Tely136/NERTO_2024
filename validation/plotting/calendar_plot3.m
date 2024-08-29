@@ -4,9 +4,6 @@ function calendar_plot3(months_years, options)
         options.save_folder char = '/mnt/disks/data-disk/figures/validation/calendar/'
     end
 
-
-% TODO: create seperate figure for tempo-pandora comparison and update with different color limit
-
 % Load Tempo and Merged data co-located to pandora sites and Pandora data
 load('/mnt/disks/data-disk/data/time_series/merged_time_series_data.mat'); %#ok<*LOAD>
 load('/mnt/disks/data-disk/data/pandora_data/pandora_data.mat');
@@ -26,8 +23,6 @@ tz = 'America/New_York';
 % How many minutes to bin Pandora data
 bin_mins = 20;
 
-% months_years = [[6, 2024];
-%                 [7, 2024]];
 
 load('/mnt/disks/data-disk/NERTO_2024/misc/USA.mat'); 
 
@@ -56,8 +51,6 @@ for i = 1:size(months_years,1)
 
         % Filter Tempo, Merged and Pandora data by site
         % Create tables with only high QA data and one with all data
-        % tempo_table_site = tempo_timetable(strcmp(tempo_timetable.Site, site),:);
-        % tempo_table_site = timetable(tempo_table_site.time, tempo_table_site.TEMPO_NO2);
 
         merged_table_site = merged_timetable(strcmp(merged_timetable.Site, site),:);
         merged_table_site = timetable(merged_table_site.time, merged_table_site.TEMPO_NO2, merged_table_site.Merged_NO2);
@@ -67,11 +60,6 @@ for i = 1:size(months_years,1)
 
 
         % Bin Tempo data hourly and Pandora data according to bin_mins
-        % Binning takes the average of all data in the bin
-        % tempo_site_mean = retime(tempo_table_site, 'hourly', 'mean');
-        % tempo_site_mean = tempo_site_mean(period,:);
-        % tempo_site_mean.Time = datetime(tempo_site_mean.Time, 'TimeZone', "America/New_York");
-
         merged_site_mean = retime(merged_table_site, 'hourly', 'mean');
         merged_site_mean = merged_site_mean(period,:);
         merged_site_mean.Time = datetime(merged_site_mean.Time, 'TimeZone', "America/New_York");
@@ -85,10 +73,7 @@ for i = 1:size(months_years,1)
             disp(strjoin([site, 'no pandora data']))
             continue
         end
-        % if isempty(tempo_site_mean)
-        %     disp(strjoin([site, 'no tempo data']))
-        %     continue
-        % end
+
         if isempty(merged_site_mean)
             disp(strjoin([site, 'no merged data']))
             continue

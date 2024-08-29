@@ -1,0 +1,23 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		},
+		{
+			"path": "."
+		},
+		{
+			"path": "../../data"
+		},
+		{
+			"path": "../../../results-disk/merged_data"
+		},
+		{
+			"path": "../../figures"
+		},
+		{
+			"path": "../../figures/validation/correlation"
+		}
+	],
+	"settings": {}
+}

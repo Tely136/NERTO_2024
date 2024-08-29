@@ -14,12 +14,13 @@ function fig = make_map_fig(lat, lon, param, lat_bounds, lon_bounds, fullpath,  
         cmap = []
     end
 
-    % lw = 2;
+    lw = 1.5;
     font_size = 30;
     resolution = 300;
 
-    states_low_res = readgeotable("usastatehi.shp");
-    % tracts = readgeotable('/mnt/disks/data-disk/NERTO_2024/shapefiles/cb_2023_24_tract_500k/cb_2023_24_tract_500k.shp');
+    NY_counties = readgeotable('/mnt/disks/data-disk/NERTO_2024/misc/shapefiles/cb_2023_36_cousub_500k/cb_2023_36_cousub_500k.shp');
+    MD_counties = readgeotable('/mnt/disks/data-disk/NERTO_2024/misc/shapefiles/cb_2023_24_cousub_500k/cb_2023_24_cousub_500k.shp');
+    DC_counties = readgeotable('/mnt/disks/data-disk/NERTO_2024/misc/shapefiles/cb_2023_11_cousub_500k/cb_2023_11_cousub_500k.shp');
 
     if isempty(dim)
         fig = figure('Visible','off', 'Position', [0, 0, 1200, 900]);
@@ -35,7 +36,9 @@ function fig = make_map_fig(lat, lon, param, lat_bounds, lon_bounds, fullpath,  
         surfm(lat(:,:,i), lon(:,:,i), param(:,:,i))
     end
 
-    geoshow(states_low_res, "DisplayType", "polygon", 'FaceAlpha', 0);
+    geoshow(NY_counties, "DisplayType", "polygon", 'FaceAlpha', 0, 'LineWidth', lw);
+    geoshow(MD_counties, "DisplayType", "polygon", 'FaceAlpha', 0, 'LineWidth', lw);
+    geoshow(DC_counties, "DisplayType", "polygon", 'FaceAlpha', 0, 'LineWidth', lw);
 
     if ~isempty(markers)
         scatterm(markers.lat, markers.lon) 
@@ -63,7 +66,6 @@ function fig = make_map_fig(lat, lon, param, lat_bounds, lon_bounds, fullpath,  
 
     fontsize(font_size, 'points')
 
-    % print(fig, fullpath, '-dpng', ['-r' num2str(resolution)])
     ax = gca;
     exportgraphics(ax, fullpath, "Resolution", resolution)
 

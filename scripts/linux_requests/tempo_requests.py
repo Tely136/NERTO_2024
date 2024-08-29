@@ -4,8 +4,8 @@ from pathlib import Path
 from datetime import datetime, timedelta
 
 # Define the start and end dates for the range
-start_date = '2023-12-01'
-end_date = '2023-12-31'
+start_date = '2024-07-01'
+end_date = '2024-07-31'
 
 # Convert to datetime objects
 start_date = datetime.strptime(start_date, '%Y-%m-%d')
@@ -61,7 +61,7 @@ while current_date <= end_date:
                 version=version,
                 temporal=(observation_start, observation_end),
                 bounding_box=bbox,
-                granule_name='*G02*'
+                granule_name='*G03*'
             )
 
         # Download granules files from NASA Earthdata
