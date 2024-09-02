@@ -1,18 +1,17 @@
-function parse_pandora(full_path)
-    pandora_table_path = '/mnt/disks/data-disk/data/pandora_data/pandora_data.mat';
+function parse_pandora(data_input_path, data_save_path)
 
     varnames = {'Site', 'Date', 'NO2', 'qa'};
     vartypes = {'string', 'datetime', 'double', 'double'};
     % Initialize or load the existing data table
-    if ~exist(pandora_table_path, "file")
+    if ~exist(data_save_path, "file")
         pandora_data = table('Size', [0, length(varnames)], 'VariableNames', varnames, 'VariableTypes', vartypes);
-        % pandora_data.Date.TimeZone = 'UTC';
+        pandora_data.Date.TimeZone = 'UTC';
     else
-        load(pandora_table_path)
+        load(data_save_path) %#ok<LOAD>
     end
 
     % Extract the site name from the file path
-    site = strsplit(full_path, '/'); 
+    site = strsplit(data_input_path, '/'); 
     site = strsplit(string(site(end)), '_'); 
     site = erase(string(site(end)), '.txt');
 
@@ -26,12 +25,12 @@ function parse_pandora(full_path)
     qa_values = zeros(0,1);
 
     % Open the file
-    fid = fopen(full_path, "rt");
+    fid = fopen(data_input_path, "rt");
     if fid == -1
-        error('Failed to open file: %s', full_path);
+        error('Failed to open file: %s', data_input_path);
     end
 
-    disp(['Parsing Pandora data in ', full_path])
+    disp(['Parsing Pandora data in ', data_input_path])
 
     % Find the second occurrence of the line of dashes
     dash_counter = 0;
@@ -74,14 +73,14 @@ function parse_pandora(full_path)
 
     % Create a new table with the new data
     temp_table = table(site_arr, dates, no2_trop, qa_values, 'VariableNames', varnames);
-    % temp_table.Date.TimeZone = 'UTC';
+    temp_table.Date.TimeZone = 'UTC';
 
     % Append the new data to the existing data table
     pandora_data = [pandora_data; temp_table];
-    pandora_data = unique(pandora_data);
+    % pandora_data = unique(pandora_data);
 
     % Save the updated table back to the file
-    save(pandora_table_path, "pandora_data");
+    save(data_save_path, "pandora_data");
 
     disp('Done')
 end

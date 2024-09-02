@@ -1,16 +1,18 @@
-function calendar_plot3(months_years, options)
+function calendar_plot3(months_years, satellite_input_data_path, pandora_input_data_path, save_folder)
     arguments
         months_years double
-        options.save_folder char = '/mnt/disks/data-disk/figures/validation/calendar/'
+        satellite_input_data_path char
+        pandora_input_data_path char
+        save_folder char
     end
 
 % Load Tempo and Merged data co-located to pandora sites and Pandora data
-load('/mnt/disks/data-disk/data/time_series/merged_time_series_data.mat'); %#ok<*LOAD>
-load('/mnt/disks/data-disk/data/pandora_data/pandora_data.mat');
+satellite_data = load(satellite_input_data_path);
+pandora_data = load(pandora_input_data_path);
 
 % Convert data tables to timetable and filter data
-merged_timetable = table2timetable(merged_data_table);
-pandora_timetable = table2timetable(pandora_data);
+merged_timetable = table2timetable(satellite_data.merged_data_table);
+pandora_timetable = table2timetable(pandora_data.pandora_data);
 pandora_timetable = pandora_timetable(pandora_timetable.qa==0|pandora_timetable.qa==1|pandora_timetable.qa==10|pandora_timetable.qa==11,:);
 
 % Params for each Pandora site
@@ -24,7 +26,7 @@ tz = 'America/New_York';
 bin_mins = 20;
 
 
-load('/mnt/disks/data-disk/NERTO_2024/misc/USA.mat'); 
+USA = load("C:\Users\tely1\MATLAB Drive\NERTO\repo\misc\USA.mat"); 
 
 % Loop over all months
 for i = 1:size(months_years,1)
@@ -213,7 +215,7 @@ for i = 1:size(months_years,1)
         fontsize(font_size, "points")
         sgtitle(strjoin([title_strings(ind), string(start_day), '-', string(end_day-days(1))]))
 
-        save_path = fullfile(options.save_folder, [num2str(current_month),'_', num2str(current_year)]); 
+        save_path = fullfile(save_folder, [num2str(current_month),'_', num2str(current_year)]); 
 
         if ~exist(save_path, 'dir')
             mkdir(save_path)

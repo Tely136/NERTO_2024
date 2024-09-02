@@ -1,15 +1,24 @@
-function merge_no2(start_date, end_date, lat_bounds, lon_bounds, options)
+function merge_no2(start_date, end_date, lat_bounds, lon_bounds, tempo_input_path, tropomi_input_path, data_save_path, options)
     arguments
         start_date string
         end_date string
         lat_bounds double
         lon_bounds double
-        options.data_save_path char = '/mnt/disks/results-disk/merged_data/'
+        tempo_input_path char
+        tropomi_input_path char
+        data_save_path char
         options.suffix char = ''
+        options.overwrite_on logical = false
     end
-
-    data_save_path = options.data_save_path;
     suffix = options.suffix;
+
+    overwrite_on = options.overwrite_on;
+    temporal_on = false;
+
+    tropomi_qa_filter = 0.75;
+    tempo_cld_filter = 0.15;
+    tempo_sza_filter = 70;
+    % tempo_vza_filter = 70;
 
     timezone = 'America/New_York';
 
@@ -18,22 +27,33 @@ function merge_no2(start_date, end_date, lat_bounds, lon_bounds, options)
     end_date = datetime(end_date, "InputFormat", 'uuuuMMdd', 'TimeZone', timezone);
     run_days = start_date:end_date;
 
+    % implement overwrite check so that already processed data isn't processed again, make this an option
+    if ~overwrite_on
+        processed_files = dir(fullfile(data_save_path, '*.nc'));
+
+        for i = 1:size(processed_files,1)
+            temp_name = processed_files(i).name;
+            temp_name = strsplit(temp_name,'_');
+            temp_date = datetime(string(temp_name(4)), "InputFormat", "uuuuMMdd", 'TimeZone', timezone);
+
+            run_days(run_days==temp_date) = [];
+
+        end
+    end
+
     % Tempo scans to be processed
     scans = 1:12;
 
     % Load Tempo and Tropomi Files
-    tempo_files = table2timetable(tempo_table('/mnt/disks/data-disk/data/tempo_data'));
+    tempo_files = table2timetable(tempo_table(tempo_input_path));
     tempo_files = tempo_files(strcmp(tempo_files.Product, 'NO2'),:);
 
-    tropomi_files = table2timetable(tropomi_table('/mnt/disks/data-disk/data/tropomi_data/'));
+    tropomi_files = table2timetable(tropomi_table(tropomi_input_path));
     tropomi_files = tropomi_files(strcmp(tropomi_files.Product, 'NO2'),:);
 
     if ~exist(data_save_path, 'dir')
         mkdir(data_save_path)
     end
-
-
-    % time_window = minutes(30);
 
     % Correlation length in km
     L = 30; 
@@ -42,7 +62,7 @@ function merge_no2(start_date, end_date, lat_bounds, lon_bounds, options)
     tau = hours(8);
 
     % Set up dimensions for Tempo and Tropomi data
-    tempo_dim = [2100, 500];
+    tempo_dim = [2100, 1400];
     trop_dim = [500 4200];
 
     tic;
@@ -90,7 +110,7 @@ function merge_no2(start_date, end_date, lat_bounds, lon_bounds, options)
         end
 
         % Filters for lat-lon bounds and Tropomi QA value
-        qa_filter = trop_qa>=0.75;
+        qa_filter = trop_qa>=tropomi_qa_filter;
         spatial_filter = false(trop_dim);
         for j = 1:size(lat_bounds,1)
             spatial_filter = spatial_filter | (trop_lat>=lat_bounds(j,1) & trop_lat<=lat_bounds(j,2) & trop_lon>=lon_bounds(j,1) & trop_lon<=lon_bounds(j,2));
@@ -163,7 +183,7 @@ function merge_no2(start_date, end_date, lat_bounds, lon_bounds, options)
         clear tempo_data_temp trop_data_temp temp_lat
 
         % Filter for lat-lon bounds, qa, clouds, and SZA for Tempo data
-        qa_filter = tempo_qa==0 & tempo_cld<0.2 & tempo_sza<70;
+        qa_filter = tempo_qa==0 & tempo_cld<tempo_cld_filter & tempo_sza<tempo_sza_filter;
         spatial_filter = false(tempo_dim);
         for k = 1:size(lat_bounds,1)
             spatial_filter = spatial_filter | (tempo_lat>=lat_bounds(k,1) & tempo_lat<=lat_bounds(k,2) & tempo_lon>=lon_bounds(k,1) & tempo_lon<=lon_bounds(k,2));
@@ -197,6 +217,7 @@ function merge_no2(start_date, end_date, lat_bounds, lon_bounds, options)
         % Correlation Matrix
         disp('Creating correlation matrix')
         C = sparse(n,n);
+        % C = zeros(n,n);
 
         % Number of chunks to split correlation matrix into
         chunk_size = 1000;
@@ -213,15 +234,20 @@ function merge_no2(start_date, end_date, lat_bounds, lon_bounds, options)
                 [tempo_lon1, tempo_lon2] = meshgrid(tempo_lon_merge(idx_i), tempo_lon_merge(idx_j));
                 C_s_chunk = gaspari_cohn(deg2km(distance(tempo_lat1, tempo_lon1, tempo_lat2, tempo_lon2)) / L);
         
-                % Temporal correlation chunk
-                [time1, time2] = meshgrid(tempo_time_merge(idx_i), tempo_time_merge(idx_j));
+                switch temporal_on
+                    case true
+                        % Temporal correlation chunk
+                        [time1, time2] = meshgrid(tempo_time_merge(idx_i), tempo_time_merge(idx_j));
 
-                C_t_chunk = temporal_correlation((time1-time2)./tau);
-                C_t_chunk(abs(time1-time2)>hours(24)) = 0;
-        
-                % Combine spatial and temporal correlations
-                C(idx_j, idx_i) = C_s_chunk .* C_t_chunk;
+                        C_t_chunk = temporal_correlation((time1-time2)./tau);
+                        C_t_chunk(abs(time1-time2)>hours(24)) = 0;
+                
+                        % Combine spatial and temporal correlations
+                        C(idx_j, idx_i) = C_s_chunk .* C_t_chunk;
 
+                    case false
+                        C(idx_j, idx_i) = C_s_chunk;
+                end
             end
         end
 

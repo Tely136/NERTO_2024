@@ -6,7 +6,7 @@ import argparse
 # Parse command-line arguments
 parser = argparse.ArgumentParser(description='Search and download TEMPO NO2 data from NASA Earthdata.')
 parser.add_argument('--data_path', type=str, required=True, help='Path to store the downloaded data')
-parser.add_argument('--short_name', type=str, required=True, help='Short name of the dataset')
+parser.add_argument('--short_name', type=str, default='TEMPO_NO2_L2', help='Short name of the dataset')
 parser.add_argument('--version', type=str, help='Version of the dataset')
 parser.add_argument('--observation_start', type=str, required=True, help='Observation start time in `YYYY-MM-DD HH:MM:SS` format')
 parser.add_argument('--observation_end', type=str, required=True, help='Observation end time in `YYYY-MM-DD HH:MM:SS` format')
