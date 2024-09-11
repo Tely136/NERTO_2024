@@ -9,11 +9,11 @@ function merge_no2(start_date, end_date, lat_bounds, lon_bounds, tempo_input_pat
         data_save_path char
         options.suffix char = ''
         options.overwrite_on logical = false
+        options.use_gpu logical = false
     end
     suffix = options.suffix;
 
     overwrite_on = options.overwrite_on;
-    temporal_on = false;
 
     tropomi_qa_filter = 0.75;
     tempo_cld_filter = 0.15;
@@ -27,7 +27,6 @@ function merge_no2(start_date, end_date, lat_bounds, lon_bounds, tempo_input_pat
     end_date = datetime(end_date, "InputFormat", 'uuuuMMdd', 'TimeZone', timezone);
     run_days = start_date:end_date;
 
-    % implement overwrite check so that already processed data isn't processed again, make this an option
     if ~overwrite_on
         processed_files = dir(fullfile(data_save_path, '*.nc'));
 
@@ -37,7 +36,6 @@ function merge_no2(start_date, end_date, lat_bounds, lon_bounds, tempo_input_pat
             temp_date = datetime(string(temp_name(4)), "InputFormat", "uuuuMMdd", 'TimeZone', timezone);
 
             run_days(run_days==temp_date) = [];
-
         end
     end
 
@@ -57,9 +55,6 @@ function merge_no2(start_date, end_date, lat_bounds, lon_bounds, tempo_input_pat
 
     % Correlation length in km
     L = 30; 
-
-    % Temporal correlation period
-    tau = hours(8);
 
     % Set up dimensions for Tempo and Tropomi data
     tempo_dim = [2100, 1400];
@@ -216,40 +211,39 @@ function merge_no2(start_date, end_date, lat_bounds, lon_bounds, tempo_input_pat
 
         % Correlation Matrix
         disp('Creating correlation matrix')
-        C = sparse(n,n);
-        % C = zeros(n,n);
 
-        % Number of chunks to split correlation matrix into
-        chunk_size = 1000;
-        num_chunks = ceil((n)/chunk_size);
+        C_size = ceil(n*n*0.3);
+        C_vals = NaN(1,C_size);
+        C_rows = int32(NaN(1,C_size));
+        C_cols = int32(NaN(1,C_size));
 
-        % Loop over each chunk and calculate correlation matrix for that chunk
-        for chunk_i = 1:num_chunks
-            for chunk_j = 1:num_chunks
-                idx_i = (chunk_i-1)*chunk_size+1 : min(chunk_i*chunk_size, n);
-                idx_j = (chunk_j-1)*chunk_size+1 : min(chunk_j*chunk_size, n);
-        
-                % Spatial correlation chunk
-                [tempo_lat1, tempo_lat2] = meshgrid(tempo_lat_merge(idx_i), tempo_lat_merge(idx_j));
-                [tempo_lon1, tempo_lon2] = meshgrid(tempo_lon_merge(idx_i), tempo_lon_merge(idx_j));
-                C_s_chunk = gaspari_cohn(deg2km(distance(tempo_lat1, tempo_lon1, tempo_lat2, tempo_lon2)) / L);
-        
-                switch temporal_on
-                    case true
-                        % Temporal correlation chunk
-                        [time1, time2] = meshgrid(tempo_time_merge(idx_i), tempo_time_merge(idx_j));
+        C_counter = 1;
+        for loc1 = 1:n
 
-                        C_t_chunk = temporal_correlation((time1-time2)./tau);
-                        C_t_chunk(abs(time1-time2)>hours(24)) = 0;
-                
-                        % Combine spatial and temporal correlations
-                        C(idx_j, idx_i) = C_s_chunk .* C_t_chunk;
+            id_to_check = loc1+1:n;
 
-                    case false
-                        C(idx_j, idx_i) = C_s_chunk;
-                end
-            end
+            distances = deg2km(distance(tempo_lat_merge(loc1), tempo_lon_merge(loc1), tempo_lat_merge, tempo_lon_merge));
+            id_valid = distances<=2*L & ismember(find(distances|~distances), id_to_check);
+
+            n_valid = numel(find(id_valid));
+
+            temp_C_vals = gaspari_cohn(distances(id_valid)./L);
+            [temp_C_rows, ~] = ind2sub([n,n], find(id_valid));
+
+            C_vals(C_counter:C_counter+n_valid-1) = temp_C_vals;
+            C_rows(C_counter:C_counter+n_valid-1) = temp_C_rows;
+            C_cols(C_counter:C_counter+n_valid-1) = loc1;
+            C_counter = C_counter+n_valid;
+
+            % disp([num2str(100*loc1/n), '%'])
         end
+
+        id_remove = isnan(C_vals) | isnan(C_rows) | isnan(C_cols);
+        C_vals(id_remove) = [];
+        C_rows(id_remove) = [];
+        C_cols(id_remove) = [];
+        C = sparse(C_rows, C_cols, C_vals, n, n);
+        C = C + C' + speye(n,n);
 
         % Background (Tempo) error covariance function
         Pb = sqrt(D)' * C * sqrt(D);
@@ -260,10 +254,29 @@ function merge_no2(start_date, end_date, lat_bounds, lon_bounds, tempo_input_pat
         % Observation transformation matrix
         disp('Calculating observation matrix')
 
-        % TODO: change interpolation operator function to take structs for better readability
-        H = interpolation_operator(tempo_lat_merge, tempo_lon_merge, tempo_lat_corners_merge, tempo_lon_corners_merge, tempo_time_merge, trop_lat_merge, trop_lon_merge, trop_lat_corners_merge, trop_lon_corners_merge, trop_time_merge, 'mean');
+        interpolation_struct = struct;
+        interpolation_struct.tempo_lat = tempo_lat_merge;
+        interpolation_struct.tempo_lon = tempo_lon_merge;
+        interpolation_struct.tempo_lat_corners = tempo_lat_corners_merge;
+        interpolation_struct.tempo_lon_corners = tempo_lon_corners_merge;
+        interpolation_struct.tempo_time = tempo_time_merge;
+        interpolation_struct.trop_lat = trop_lat_merge;
+        interpolation_struct.trop_lon = trop_lon_merge;
+        interpolation_struct.trop_lat_corners = trop_lat_corners_merge;
+        interpolation_struct.trop_lon_corners = trop_lon_corners_merge;
+        interpolation_struct.trop_time = trop_time_merge;
+        interpolation_struct.time_window = minutes(30);
+
+        % TODO: look at the efficiency of this function
+        H = interpolation_operator(interpolation_struct, 'mean');
 
         clear tempo_lat_merge tempo_lon_merge tempo_lat_corners_merge tempo_lon_corners_merge tempo_time_merge trop_lat_merge trop_lon_merge trop_lat_corners_merg trop_lon_corners_merge trop_time_merge
+
+        if options.use_gpu
+            Pb = gpuArray(Pb);
+            R = gpuArray(R);
+            H = gpuArray(H);
+        end
 
         % Kalman Gain
         disp('Calculating Kalman Gain matrix')
@@ -279,6 +292,10 @@ function merge_no2(start_date, end_date, lat_bounds, lon_bounds, tempo_input_pat
         % Prepare data for saving
         disp('Saving data')
 
+        if options.use_gpu
+            Xa = gather(Xa);
+            Pa = gather(Pa);
+        end
 
         % Matrices to save analysis
         analysis_no2 = NaN([tempo_dim(1), tempo_dim(2), n_scans]);

@@ -1,19 +1,20 @@
-function H = interpolation_operator(bg_lat, bg_lon, bg_lat_corners, bg_lon_corners, bg_time, obs_lat, obs_lon, obs_lat_corners, obs_lon_corners, obs_time, method)
+function H = interpolation_operator(interpolation_struct, method)
     arguments
-        bg_lat
-        bg_lon
-        bg_lat_corners
-        bg_lon_corners
-        bg_time
-        obs_lat
-        obs_lon
-        obs_lat_corners
-        obs_lon_corners
-        obs_time
+        interpolation_struct
         method
     end
 
-    time_window = minutes(30);
+    bg_lat = interpolation_struct.tempo_lat;
+    bg_lon = interpolation_struct.tempo_lon;
+    bg_lat_corners = interpolation_struct.tempo_lat_corners;
+    bg_lon_corners = interpolation_struct.tempo_lon_corners;
+    bg_time = interpolation_struct.tempo_time;
+    obs_lat = interpolation_struct.trop_lat;
+    obs_lat_corners = interpolation_struct.trop_lat_corners;
+    obs_lon_corners = interpolation_struct.trop_lon_corners;
+    obs_time = interpolation_struct.trop_time;
+
+    time_window = interpolation_struct.time_window;
 
     switch method
         case 'bilinear'

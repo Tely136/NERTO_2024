@@ -240,7 +240,7 @@ function Copy_of_merge_no2(start_date, end_date, lat_bounds, lon_bounds, tempo_i
             C_cols(C_counter:C_counter+n_valid-1) = loc1;
             C_counter = C_counter+n_valid;
 
-            disp([num2str(100*loc1/n), '%'])
+            % disp([num2str(100*loc1/n), '%'])
         end
 
         id_remove = isnan(C_vals) | isnan(C_rows) | isnan(C_cols);
