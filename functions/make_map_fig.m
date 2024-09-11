@@ -18,9 +18,9 @@ function fig = make_map_fig(lat, lon, param, lat_bounds, lon_bounds, fullpath,  
     font_size = 30;
     resolution = 300;
 
-    NY_counties = readgeotable('C:\Users\tely1\MATLAB Drive\NERTO\repo\misc\shapefiles\cb_2023_36_cousub_500k\cb_2023_36_cousub_500k.shp');
-    MD_counties = readgeotable('C:\Users\tely1\MATLAB Drive\NERTO\repo\misc\shapefiles\cb_2023_24_cousub_500k\cb_2023_24_cousub_500k.shp');
-    DC_counties = readgeotable('C:\Users\tely1\MATLAB Drive\NERTO\repo\misc\shapefiles\cb_2023_11_cousub_500k\cb_2023_11_cousub_500k.shp');
+    NY_counties = readgeotable('cb_2023_36_cousub_500k.shp');
+    MD_counties = readgeotable('cb_2023_24_cousub_500k.shp');
+    DC_counties = readgeotable('cb_2023_11_cousub_500k.shp');
 
     if isempty(dim)
         fig = figure('Visible','off', 'Position', [0, 0, 1200, 900]);
@@ -67,7 +67,8 @@ function fig = make_map_fig(lat, lon, param, lat_bounds, lon_bounds, fullpath,  
     fontsize(font_size, 'points')
 
     ax = gca;
-    exportgraphics(ax, fullpath, "Resolution", resolution)
+    exportgraphics(ax, strjoin([fullpath, '.png'],''), "Resolution", resolution)
+    savefig(fig, strjoin([fullpath, '.fig'],''))
 
     close(fig);
 end

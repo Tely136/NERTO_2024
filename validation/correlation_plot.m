@@ -1,8 +1,18 @@
-function correlation_plot(satellite_data_input_path, pandora_data_input_path, data_output_path, fig_path)
+function correlation_plot(satellite_data_input_path, pandora_data_input_path, data_output_path, fig_path, options)
+    arguments
+        satellite_data_input_path
+        pandora_data_input_path
+        data_output_path
+        fig_path
+        options.overwrite_on logical = false
+    end
     robust_setting = 'off';
+    % robust_setting = 'on';
 
     satellite_data = load(satellite_data_input_path);
+
     pandora_data = load(pandora_data_input_path);
+    pandora_data = pandora_data.pandora_data;
     pandora_data = renamevars(pandora_data, {'Date', 'NO2'}, {'time','PANDORA_NO2'});
 
     save_path = fullfile(data_output_path, 'correlation.mat');
@@ -11,12 +21,13 @@ function correlation_plot(satellite_data_input_path, pandora_data_input_path, da
     vartypes = {'string', 'datetime', 'double', 'double', 'double', 'double'};
 
     start_day = datetime(2023,8,1, "TimeZone", "UTC");
-    end_day = datetime(2024,8,1,"TimeZone","UTC");
+    end_day = datetime(2024,8,31,"TimeZone", "UTC");
 
     t = timerange(start_day, end_day);
 
-    if exist(save_path, "file")
+    if exist(save_path, "file") && ~options.overwrite_on
         comparison_table = load(save_path);
+        comparison_table = comparison_table.comparison_table;
     else
         pandora_data = table2timetable(pandora_data(:,{'time', 'Site','PANDORA_NO2'}));
         merged_data = table2timetable(satellite_data.merged_data_table(:, {'time', 'Site', 'TEMPO_NO2', 'Merged_NO2'}));
@@ -37,7 +48,7 @@ function correlation_plot(satellite_data_input_path, pandora_data_input_path, da
         comparison_table = table('Size', [size(merged_data,1), length(varnames)], 'VariableNames', varnames, 'VariableTypes', vartypes);
         comparison_table.time.TimeZone = 'UTC';
 
-        time_threshold = minutes(30);
+        time_threshold = minutes(30); % try shorter times
         % time_threshold = minutes(60);
 
         sites = unique(merged_data.Site);
@@ -68,7 +79,7 @@ function correlation_plot(satellite_data_input_path, pandora_data_input_path, da
 
         % comparison_table(isnan(comparison_table.TROPOMI_NO2),:) = [];
         comparison_table(counter+1:end,:) = [];
-        % save(save_path, "comparison_table");
+        save(save_path, "comparison_table");
     end
 
 
@@ -80,7 +91,7 @@ function correlation_plot(satellite_data_input_path, pandora_data_input_path, da
     comparison_table.PANDORA_NO2 = comparison_table.PANDORA_NO2.*10^6;
 
     sites = unique(comparison_table.Site);
-    fits = NaN(length(sites), 3, 2);
+    % fits = NaN(length(sites), 3, 2);
 
     % Initialize a results table
     results_varnames = {'Site', 'Dataset', 'Slope', 'Intercept', 'CorrelationCoefficient'};
@@ -99,15 +110,15 @@ function correlation_plot(satellite_data_input_path, pandora_data_input_path, da
         x_data = tempo_comp.PANDORA_NO2;
         x_data(end+1) = maxval;
         
-        [tempo_p, tempo_gof] = fit(tempo_comp.PANDORA_NO2, tempo_comp.TEMPO_NO2, 'poly1', 'Robust', robust_setting);
+        [tempo_p, ~] = fit(tempo_comp.PANDORA_NO2, tempo_comp.TEMPO_NO2, 'poly1', 'Robust', robust_setting);
         tempo_fit = feval(tempo_p, x_data);
         tempo_cor = corrcoef(tempo_comp.PANDORA_NO2, tempo_comp.TEMPO_NO2);
 
-        [merged_p, merged_gof] = fit(merged_comp.PANDORA_NO2, merged_comp.Merged_NO2, 'poly1', 'Robust', robust_setting);
+        [merged_p, ~] = fit(merged_comp.PANDORA_NO2, merged_comp.Merged_NO2, 'poly1', 'Robust', robust_setting);
         merged_fit = feval(merged_p, x_data);
         merged_cor = corrcoef(merged_comp.PANDORA_NO2, merged_comp.Merged_NO2);
 
-        [tropomi_p, tropomi_gof] = fit(tropomi_comp.PANDORA_NO2, tropomi_comp.TROPOMI_NO2, 'poly1', 'Robust', robust_setting);
+        [tropomi_p, ~] = fit(tropomi_comp.PANDORA_NO2, tropomi_comp.TROPOMI_NO2, 'poly1', 'Robust', robust_setting);
         tropomi_fit = feval(tropomi_p, x_data);
         tropomi_cor = corrcoef(tropomi_comp.PANDORA_NO2, tropomi_comp.TROPOMI_NO2);
 
@@ -130,7 +141,7 @@ function correlation_plot(satellite_data_input_path, pandora_data_input_path, da
         input.x_data = x_data;
 
         filename = strjoin([site, '_correlation.png'],'');
-        create_and_save_fig_scatter_lines(input, fig_path, filename, site, {'TEMPO', 'TROPOMI', 'Merged'}, 'PANDORA tropospheric NO2 (umol/m^2)', 'Satellite tropospheric NO2 (umol/m^2)', [], []);
+        create_and_save_fig_scatter_lines(input, fig_path, filename, '', {'TEMPO', 'TROPOMI', 'Merged'}, 'PANDORA tropospheric NO2 (umol/m^2)', 'Satellite tropospheric NO2 (umol/m^2)', [], []);
         % break
     end
 
@@ -155,15 +166,15 @@ function correlation_plot(satellite_data_input_path, pandora_data_input_path, da
         x_data = tempo_comp.PANDORA_NO2;
         x_data(end+1) = maxval;
         
-        [tempo_p, tempo_gof] = fit(tempo_comp.PANDORA_NO2, tempo_comp.TEMPO_NO2, 'poly1', 'Robust', robust_setting);
+        [tempo_p, ~] = fit(tempo_comp.PANDORA_NO2, tempo_comp.TEMPO_NO2, 'poly1', 'Robust', robust_setting);
         tempo_fit = feval(tempo_p, x_data);
         tempo_cor = corrcoef(tempo_comp.PANDORA_NO2, tempo_comp.TEMPO_NO2);
 
-        [merged_p, merged_gof] = fit(merged_comp.PANDORA_NO2, merged_comp.Merged_NO2, 'poly1', 'Robust', robust_setting);
+        [merged_p, ~] = fit(merged_comp.PANDORA_NO2, merged_comp.Merged_NO2, 'poly1', 'Robust', robust_setting);
         merged_fit = feval(merged_p, x_data);
         merged_cor = corrcoef(merged_comp.PANDORA_NO2, merged_comp.Merged_NO2);
 
-        [tropomi_p, tropomi_gof] = fit(tropomi_comp.PANDORA_NO2, tropomi_comp.TROPOMI_NO2, 'poly1', 'Robust', robust_setting);
+        [tropomi_p, ~] = fit(tropomi_comp.PANDORA_NO2, tropomi_comp.TROPOMI_NO2, 'poly1', 'Robust', robust_setting);
         tropomi_fit = feval(tropomi_p, x_data);
         tropomi_cor = corrcoef(tropomi_comp.PANDORA_NO2, tropomi_comp.TROPOMI_NO2);
 
@@ -187,7 +198,7 @@ function correlation_plot(satellite_data_input_path, pandora_data_input_path, da
         input.x_data = x_data;
 
         filename = strjoin([current_case, '_correlation.png'],'');
-        create_and_save_fig_scatter_lines(input, fig_path, filename, current_case, {'TEMPO', 'TROPOMI', 'Merged'}, 'PANDORA tropospheric NO2 (umol/m^2)', 'Satellite tropospheric NO2 (umol/m^2)', [], []);
+        create_and_save_fig_scatter_lines(input, fig_path, filename, '', {'Merged', 'TEMPO', 'TROPOMI'}, 'PANDORA tropospheric NO2 (umol/m^2)', 'Satellite tropospheric NO2 (umol/m^2)', [], []);
         % break
     end
 
@@ -216,6 +227,7 @@ function create_and_save_fig_scatter_lines(input, path, name, ttext, leg, xtext,
 
     lw = 2;
     font_size = 20;
+    scatter_size = 30;
 
     if isempty(dim)
         dim = [0, 0, 1200, 900];
@@ -230,14 +242,20 @@ function create_and_save_fig_scatter_lines(input, path, name, ttext, leg, xtext,
 
     hold on;
     % Scatter plots
-    scatter(input.tempo_comp.PANDORA_NO2, input.tempo_comp.TEMPO_NO2, 50, colors(1,:),  'LineWidth', lw);
-    scatter(input.tropomi_comp.PANDORA_NO2, input.tropomi_comp.TROPOMI_NO2, 50, colors(2,:),  'LineWidth', lw);
-    scatter(input.merged_comp.PANDORA_NO2, input.merged_comp.Merged_NO2, 50, colors(3,:),  'LineWidth', lw);
+    scatter(input.merged_comp.PANDORA_NO2, input.merged_comp.Merged_NO2, scatter_size, colors(3,:), 'LineWidth', lw);
+    scatter(input.tempo_comp.PANDORA_NO2, input.tempo_comp.TEMPO_NO2, scatter_size, colors(1,:), 'LineWidth', lw);
+    scatter(input.tropomi_comp.PANDORA_NO2, input.tropomi_comp.TROPOMI_NO2, scatter_size, colors(2,:), 'LineWidth', lw);
+
+    % scatter(input.merged_comp.PANDORA_NO2, input.merged_comp.Merged_NO2, scatter_size, colors(3,:), 'filled');
+    % scatter(input.tempo_comp.PANDORA_NO2, input.tempo_comp.TEMPO_NO2, scatter_size, colors(1,:), 'filled');
+    % scatter(input.tropomi_comp.PANDORA_NO2, input.tropomi_comp.TROPOMI_NO2, scatter_size, colors(2,:), 'filled');
 
     % Linear fit lines
+    plot(input.x_data, input.merged_fit, 'Color', colors(3,:), 'LineWidth', lw);
     plot(input.x_data, input.tempo_fit, 'Color', colors(1,:), 'LineWidth', lw);
     plot(input.x_data, input.tropomi_fit, 'Color', colors(2,:), 'LineWidth', lw);
-    plot(input.x_data, input.merged_fit, 'Color', colors(3,:), 'LineWidth', lw);
+
+    plot(sort(input.x_data), sort(input.x_data), 'Color', [0,0,0,0.5], 'LineStyle', '--', 'LineWidth', lw);
 
     hold off;
 

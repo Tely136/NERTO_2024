@@ -13,7 +13,7 @@ function plot_results(start_date, end_date, lat_bounds, lon_bounds, input_data_p
     end_date = datetime(end_date, "InputFormat", 'uuuuMMdd', 'TimeZone', plot_timezone);
     plot_days = start_date:end_date;
 
-    USA = load("C:\Users\tely1\MATLAB Drive\NERTO\repo\misc\USA.mat");
+    USA = load("USA.mat");
     USA = USA.USA;
 
     % font_size = 20;
@@ -24,9 +24,9 @@ function plot_results(start_date, end_date, lat_bounds, lon_bounds, input_data_p
     for i = 1:length(plot_days)
         date = datetime(plot_days(i), "Format", "uuuuMMdd");
 
-        fig_save_path = fullfile(fig_save_path, string(date));
-        if ~exist(fig_save_path, "dir")
-            mkdir(fig_save_path)
+        current_fig_save_path = fullfile(fig_save_path, string(date));
+        if ~exist(current_fig_save_path, "dir")
+            mkdir(current_fig_save_path)
         end
 
         f = strjoin(['*', string(date),'*.nc'],  '');
@@ -84,22 +84,22 @@ function plot_results(start_date, end_date, lat_bounds, lon_bounds, input_data_p
                 cb_str = 'umol/m^2';
 
                 title = strjoin(['TEMPO TropNO2 Column', newline, string(mean(tempo_time, 'omitmissing')), 'EST']);
-                make_map_fig(tempo_lat, tempo_lon, tempo_no2, lat_bounds, lon_bounds, fullfile(fig_save_path, strjoin([string(date), '_S', num2str(scan), '_', 'tempo.png'], '')), title, cb_str, clim_no2, [], dim);
+                make_map_fig(tempo_lat, tempo_lon, tempo_no2, lat_bounds, lon_bounds, fullfile(current_fig_save_path, strjoin([string(date), '_S', num2str(scan), '_', 'tempo'], '')), title, cb_str, clim_no2, [], dim);
 
                 title = 'Merged TropNO2 Column';
-                make_map_fig(tempo_lat, tempo_lon, analysis_no2, lat_bounds, lon_bounds, fullfile(fig_save_path, strjoin([string(date), '_S', num2str(scan), '_', 'analysis.png'], '')), title, cb_str, clim_no2, [], dim);
+                make_map_fig(tempo_lat, tempo_lon, analysis_no2, lat_bounds, lon_bounds, fullfile(current_fig_save_path, strjoin([string(date), '_S', num2str(scan), '_', 'analysis'], '')), title, cb_str, clim_no2, [], dim);
 
                 title = 'Analysis Minus Background';
-                make_map_fig(tempo_lat, tempo_lon, update, lat_bounds, lon_bounds, fullfile(fig_save_path, strjoin([string(date), '_S', num2str(scan), '_', 'update.png'], '')), title, cb_str, [-100 100], [], dim, USA);
+                make_map_fig(tempo_lat, tempo_lon, update, lat_bounds, lon_bounds, fullfile(current_fig_save_path, strjoin([string(date), '_S', num2str(scan), '_', 'update'], '')), title, cb_str, [-100 100], [], dim, USA);
 
                 % title = strjoin(['TEMPO TropNO2 Uncertainty', string(mean(tempo_time)), 'EST']);
-                % make_map_fig(tempo_lat, tempo_lon, tempo_no2_u, lat_bounds, lon_bounds, fullfile(fig_save_path, strjoin([string(date), '_S', num2str(scan), '_', 'tempo_u.png'], '')), title, cb_str, clim_no2_u, [], dim);
+                % make_map_fig(tempo_lat, tempo_lon, tempo_no2_u, lat_bounds, lon_bounds, fullfile(current_fig_save_path, strjoin([string(date), '_S', num2str(scan), '_', 'tempo_u'], '')), title, cb_str, clim_no2_u, [], dim);
 
                 % title = strjoin(['TROPOMI TropNO2 Uncertainty', string(mean(tropomi_time)), 'EST']);
-                % make_map_fig(tropomi_lat, tropomi_lon, tropomis_no2_u, lat_bounds, lon_bounds, fullfile(fig_save_path, strjoin([string(date), '_S', num2str(scan), '_', 'tropomi_u.png'], '')), title, cb_str, clim_no2_u, [], dim);
+                % make_map_fig(tropomi_lat, tropomi_lon, tropomis_no2_u, lat_bounds, lon_bounds, fullfile(current_fig_save_path, strjoin([string(date), '_S', num2str(scan), '_', 'tropomi_u'], '')), title, cb_str, clim_no2_u, [], dim);
 
                 % title = 'Merged TropNO2 Uncertainty';
-                % make_map_fig(tempo_lat, tempo_lon, analysis_no2_u, lat_bounds, lon_bounds, fullfile(fig_save_path, strjoin([string(date), '_S', num2str(scan), '_', 'analysis_u.png'], '')), title, cb_str, [0 10], [], dim);
+                % make_map_fig(tempo_lat, tempo_lon, analysis_no2_u, lat_bounds, lon_bounds, fullfile(current_fig_save_path, strjoin([string(date), '_S', num2str(scan), '_', 'analysis_u'], '')), title, cb_str, [0 10], [], dim);
             end
 
             for j = 1:size(tropomi_no2,3)
@@ -107,16 +107,16 @@ function plot_results(start_date, end_date, lat_bounds, lon_bounds, input_data_p
                     disp(['Tropomi Scan: ', num2str(j)])
 
                     title = strjoin(['TROPOMI TropNO2 Column', newline, string(mean(tropomi_time(:,:,j), 'omitmissing')), 'EST']);
-                    make_map_fig(tropomi_lat(:,:,j), tropomi_lon(:,:,j), tropomi_no2(:,:,j), lat_bounds, lon_bounds, fullfile(fig_save_path, strjoin([string(date), '_G', num2str(j), '_', 'tropomi.png'], '')), title, cb_str, clim_no2, [], dim);
+                    make_map_fig(tropomi_lat(:,:,j), tropomi_lon(:,:,j), tropomi_no2(:,:,j), lat_bounds, lon_bounds, fullfile(current_fig_save_path, strjoin([string(date), '_G', num2str(j), '_', 'tropomi.png'], '')), title, cb_str, clim_no2, [], dim);
                 end
             end
 
             disp('Creating composite')
 
-            tempo_figs = dir(fullfile(fig_save_path, '*tempo*'));
-            tropomi_figs = dir(fullfile(fig_save_path, '*tropomi*'));
-            analysis_figs = dir(fullfile(fig_save_path, '*analysis*'));
-            update_figs = dir(fullfile(fig_save_path, '*update*'));
+            tempo_figs = dir(fullfile(current_fig_save_path, '*tempo*.png'));
+            tropomi_figs = dir(fullfile(current_fig_save_path, '*tropomi*.png'));
+            analysis_figs = dir(fullfile(current_fig_save_path, '*analysis*.png'));
+            update_figs = dir(fullfile(current_fig_save_path, '*update*.png'));
 
             new_dim = [1000, 1000]; % TODO: find way to preserve aspect ratio
 
@@ -209,7 +209,7 @@ function plot_results(start_date, end_date, lat_bounds, lon_bounds, input_data_p
                     imshow(update_imgs(:,:,:,j), 'Border', 'tight');
                 end
 
-                exportgraphics(fig, fullfile(fig_save_path,'composite.png'), 'Resolution', 600)
+                exportgraphics(fig, fullfile(current_fig_save_path,'composite.png'), 'Resolution', 600)
                 close(fig)
             end
         end

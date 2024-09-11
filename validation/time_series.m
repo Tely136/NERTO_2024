@@ -38,6 +38,9 @@ function time_series(data_input_path, data_save_path)
 
         tropomi_data_table = table('Size', [0 length(tropomi_varnames)] ,'VariableNames', tropomi_varnames, 'VariableTypes', tropomi_vartypes);
         tropomi_data_table.time.TimeZone = 'UTC';
+
+        files = dir(fullfile(data_input_path, '*.nc'));
+        processed_files = strings;
     end
 
 

@@ -6,7 +6,7 @@ function plot_results_avg(start_date, end_date, lat_bounds, lon_bounds, input_da
         lon_bounds double
         input_data_path string
         fig_save_path string
-        options.tempo_clim double = [0 300]
+        options.tempo_clim double = [0 300] %#ok<INUSA>
         options.tropomi_clim double = [0 300]
         options.merged_clim double = [0 300]
         options.update_clim double = [-100 100]
@@ -23,7 +23,7 @@ if ~exist(fig_save_path, 'dir')
     mkdir(fig_save_path)
 end
 
-USA = load("C:\Users\tely1\MATLAB Drive\NERTO\repo\misc\USA.mat");
+USA = load("USA.mat");
 USA = USA.USA;
 
 if ~exist(fullfile(fig_save_path, "average_data.mat"), "file")
@@ -125,20 +125,46 @@ disp('Making maps')
 dim = [0, 0, 1000, 1000];
 cb_str = 'umol/m^2';
 
+no2_lim_inc = 50;
+update_lim_inc = 50;
+
+tempo_no2_test = rmoutliers(tempo_no2);
+trop_no2_test = rmoutliers(trop_no2);
+merged_no2_test = rmoutliers(analysis_no2);
+
+tempo_max_no2 = max(tempo_no2_test, [], 'all');
+tempo_min_no2 = min(tempo_no2_test, [], 'all');
+
+tropomi_max_no2 = max(trop_no2_test, [], 'all');
+tropomi_min_no2 = min(trop_no2_test, [], 'all');
+
+merged_max_no2 =  max(merged_no2_test, [], 'all');
+merged_min_no2 = min(merged_no2_test, [], 'all');
+
+update_max =  max(abs(update), [], 'all');
+
+max_no2 = max([tempo_max_no2; tropomi_max_no2; merged_max_no2]);
+min_no2 = min([tempo_min_no2; tropomi_min_no2; merged_min_no2]);
+
+no2_clim = [no2_lim_inc*round(min_no2/no2_lim_inc) no2_lim_inc*round(max_no2/no2_lim_inc)];
+no2_clim(1) = max([0; no2_clim(1)]);
+
+update_clim = [-update_lim_inc*round(update_max/update_lim_inc), update_lim_inc*round(update_max/update_lim_inc)];
+
 title_str = sprintf('Average TEMPO NO2 Column %s %s', string(month(start_date, 'name')), string(year(start_date)));
-make_map_fig(tempo_lat, tempo_lon, tempo_no2, lat_bounds, lon_bounds, fullfile(fig_save_path, 'avg_tempo.png'), title_str, cb_str, options.tempo_clim, [], dim);
+make_map_fig(tempo_lat, tempo_lon, tempo_no2, lat_bounds, lon_bounds, fullfile(fig_save_path, 'avg_tempo'), title_str, cb_str, no2_clim, [], dim);
 
 title_str = sprintf('Average TROPOMI NO2 Column %s %s', string(month(start_date, 'name')), string(year(start_date)));
-make_map_fig(lat_grid, lon_grid, trop_no2, lat_bounds, lon_bounds, fullfile(fig_save_path, 'avg_tropomi.png'), title_str, cb_str, options.tropomi_clim, [], dim);
+make_map_fig(lat_grid, lon_grid, trop_no2, lat_bounds, lon_bounds, fullfile(fig_save_path, 'avg_tropomi'), title_str, cb_str, no2_clim, [], dim);
 
 title_str = sprintf('Average Analysis NO2 Column %s %s', string(month(start_date, 'name')), string(year(start_date)));
-make_map_fig(tempo_lat, tempo_lon, analysis_no2, lat_bounds, lon_bounds, fullfile(fig_save_path, 'avg_merged.png'), title_str, cb_str, options.merged_clim, [], dim);
+make_map_fig(tempo_lat, tempo_lon, analysis_no2, lat_bounds, lon_bounds, fullfile(fig_save_path, 'avg_merged'), title_str, cb_str, no2_clim, [], dim);
 
 title_str = sprintf('Analysis Increment %s %s', string(month(start_date, 'name')), string(year(start_date)));
-make_map_fig(tempo_lat, tempo_lon, update, lat_bounds, lon_bounds, fullfile(fig_save_path, 'update.png'), title_str, cb_str, options.update_clim, [], dim, USA);
+make_map_fig(tempo_lat, tempo_lon, update, lat_bounds, lon_bounds, fullfile(fig_save_path, 'update'), title_str, cb_str, update_clim, [], dim, USA);
 
 title_str = sprintf('Average TEMPO NO2 Column %s %s', string(month(start_date, 'name')), string(year(start_date)));
-make_map_fig(lat_grid, lon_grid, tempo_reg, lat_bounds, lon_bounds, fullfile(fig_save_path, 'avg_tempo_reg.png'), title_str, cb_str, options.tempo_clim, [], dim);
+make_map_fig(lat_grid, lon_grid, tempo_reg, lat_bounds, lon_bounds, fullfile(fig_save_path, 'avg_tempo_reg'), title_str, cb_str, no2_clim, [], dim);
 
 % title_str = sprintf('Tropomi - TEMPO \n %s - %s', string(start_date), string(end_date));
-% make_map_fig(lat_grid, lon_grid, trop_tempo_diff, lat_bounds, lon_bounds, fullfile(fig_save_path, 'trop_tempo_diff.png'), title_str, cb_str, options.update_clim, [], dim, USA);
+% make_map_fig(lat_grid, lon_grid, trop_tempo_diff, lat_bounds, lon_bounds, fullfile(fig_save_path, 'trop_tempo_diff'), title_str, cb_str, options.update_clim, [], dim, USA);
