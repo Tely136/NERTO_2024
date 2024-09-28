@@ -8,4 +8,4 @@ fig_path = "C:\Users\tely1\OneDrive - The City College of New York\NERTO Data\fi
 merge_no2('20240525', '20240525', [38.75 41.3], [-77.5 -73.3], tempo_path, tropomi_path, merged_path, overwrite_on=true)
 
 
-plot_results('20240525', '20240525', [40.4 41.3], [-74.5 -73.3], merged_path, fig_path)
+plot_results('20240525', '20240525', [38.75 41.3], [-77.5 -73.3], merged_path, fig_path)

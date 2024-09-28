@@ -169,6 +169,8 @@ function merge_no2(start_date, end_date, lat_bounds, lon_bounds, tempo_input_pat
                     tempo_qa(1:row,col_counter:col_counter+col-1,j) = tempo_data_temp.qa;
                     tempo_cld(1:row,col_counter:col_counter+col-1,j) = tempo_data_temp.f_cld;
                     tempo_sza(1:row,col_counter:col_counter+col-1,j) = tempo_data_temp.sza;
+
+                    % TODO: fix this it sucks
                     tempo_time(1:row,col_counter:col_counter+col-1,j) = resize(tempo_data_temp.time', [row,col], 'Pattern', 'circular');
 
                     col_counter = col_counter+col;
@@ -219,7 +221,6 @@ function merge_no2(start_date, end_date, lat_bounds, lon_bounds, tempo_input_pat
 
         C_counter = 1;
         for loc1 = 1:n
-
             id_to_check = loc1+1:n;
 
             distances = deg2km(distance(tempo_lat_merge(loc1), tempo_lon_merge(loc1), tempo_lat_merge, tempo_lon_merge));
@@ -260,16 +261,23 @@ function merge_no2(start_date, end_date, lat_bounds, lon_bounds, tempo_input_pat
         interpolation_struct.tempo_lat_corners = tempo_lat_corners_merge;
         interpolation_struct.tempo_lon_corners = tempo_lon_corners_merge;
         interpolation_struct.tempo_time = tempo_time_merge;
+
         interpolation_struct.trop_lat = trop_lat_merge;
         interpolation_struct.trop_lon = trop_lon_merge;
         interpolation_struct.trop_lat_corners = trop_lat_corners_merge;
         interpolation_struct.trop_lon_corners = trop_lon_corners_merge;
         interpolation_struct.trop_time = trop_time_merge;
+
         interpolation_struct.time_window = minutes(30);
+        interpolation_struct.search_area = 0.1;
 
         % TODO: look at the efficiency of this function
+        % Look into regridding observations to lower resolution and see how it affects time and performance
         H = interpolation_operator(interpolation_struct, 'mean');
 
+        % TODO: finish function to test interpolation and try it here
+
+        
         clear tempo_lat_merge tempo_lon_merge tempo_lat_corners_merge tempo_lon_corners_merge tempo_time_merge trop_lat_merge trop_lon_merge trop_lat_corners_merg trop_lon_corners_merge trop_time_merge
 
         if options.use_gpu
