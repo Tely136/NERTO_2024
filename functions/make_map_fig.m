@@ -68,6 +68,11 @@ function fig = make_map_fig(lat, lon, param, lat_bounds, lon_bounds, fullpath,  
 
     ax = gca;
     exportgraphics(ax, strjoin([fullpath, '.png'],''), "Resolution", resolution)
+
+    if exist(strjoin([fullpath, '.fig'],''), "file")
+        delete(strjoin([fullpath, '.fig'],''))
+    end
+
     savefig(fig, strjoin([fullpath, '.fig'],''))
 
     close(fig);

@@ -83,7 +83,9 @@ function merge_no2(start_date, end_date, lat_bounds, lon_bounds, tempo_input_pat
         trop_no2 = NaN(trop_dim(1),trop_dim(2),size(trop_files_day,1));
         trop_no2_u = NaN(trop_dim(1),trop_dim(2),size(trop_files_day,1));
         trop_qa = single(NaN(trop_dim(1),trop_dim(2),size(trop_files_day,1)));
-        trop_time = NaT(trop_dim(1),trop_dim(2),size(trop_files_day,1), 'TimeZone', 'UTC');
+
+        % trop_time = NaT(trop_dim(1),trop_dim(2),size(trop_files_day,1), 'TimeZone', 'UTC');
+        trop_time = NaT(trop_dim(2), size(trop_files_day,1), 'TimeZone', 'UTC');
 
         % Loop over all Tropomi files on this day
         disp('Loading all Tropomi data')
@@ -101,7 +103,11 @@ function merge_no2(start_date, end_date, lat_bounds, lon_bounds, tempo_input_pat
             trop_no2(1:row,1:col,j) = trop_data_temp.no2;
             trop_no2_u(1:row,1:col,j) = trop_data_temp.no2_u;
             trop_qa(1:row,1:col,j) = trop_data_temp.qa;
-            trop_time(1:row,1:col,j) = resize(trop_data_temp.time', [row,col], 'Pattern', 'circular');
+
+            % Fix this it sucks
+            % trop_time(1:row,1:col,j) = resize(trop_data_temp.time', [row,col], 'Pattern', 'circular');
+            trop_time(1:col,j) = trop_data_temp.time;
+
         end
 
         % Filters for lat-lon bounds and Tropomi QA value
@@ -113,6 +119,8 @@ function merge_no2(start_date, end_date, lat_bounds, lon_bounds, tempo_input_pat
 
         % Find valid Tropomi indices based on filters
         valid_ind_trop = spatial_filter & qa_filter;
+
+        [valid_row, ~] = ind2sub(size(spatial_filter), find(valid_ind_trop));
         
         % Filter all Tropomi data for the day using valid indices
         trop_lat_merge = trop_lat(valid_ind_trop);
@@ -121,7 +129,7 @@ function merge_no2(start_date, end_date, lat_bounds, lon_bounds, tempo_input_pat
         trop_lon_corners_merge = trop_lon_corners(:,valid_ind_trop);
         trop_no2_merge = trop_no2(valid_ind_trop);
         trop_no2_u_merge = trop_no2_u(valid_ind_trop);
-        trop_time_merge = trop_time(valid_ind_trop);
+        trop_time_merge = trop_time(valid_row);
 
         % Number of Tempo scans to process 
         n_scans = length(scans);
@@ -136,7 +144,7 @@ function merge_no2(start_date, end_date, lat_bounds, lon_bounds, tempo_input_pat
         tempo_qa = NaN(tempo_dim(1), tempo_dim(2), n_scans);
         tempo_cld = NaN(tempo_dim(1), tempo_dim(2), n_scans);
         tempo_sza = NaN(tempo_dim(1), tempo_dim(2), n_scans);
-        tempo_time = NaT(tempo_dim(1), tempo_dim(2), n_scans, 'TimeZone', 'UTC');
+        tempo_time = NaT(1, tempo_dim(2), n_scans, 'TimeZone', 'UTC');
 
         % Loop over Tempo scans for current day
         disp('Loading all Tempo data')
@@ -169,15 +177,15 @@ function merge_no2(start_date, end_date, lat_bounds, lon_bounds, tempo_input_pat
                     tempo_qa(1:row,col_counter:col_counter+col-1,j) = tempo_data_temp.qa;
                     tempo_cld(1:row,col_counter:col_counter+col-1,j) = tempo_data_temp.f_cld;
                     tempo_sza(1:row,col_counter:col_counter+col-1,j) = tempo_data_temp.sza;
-
-                    % TODO: fix this it sucks
-                    tempo_time(1:row,col_counter:col_counter+col-1,j) = resize(tempo_data_temp.time', [row,col], 'Pattern', 'circular');
+                    tempo_time(1,col_counter:col_counter+col-1,j) = tempo_data_temp.time;
 
                     col_counter = col_counter+col;
                 end
             end
         end
         clear tempo_data_temp trop_data_temp temp_lat
+
+        % Here, create subset areas and loop over them
 
         % Filter for lat-lon bounds, qa, clouds, and SZA for Tempo data
         qa_filter = tempo_qa==0 & tempo_cld<tempo_cld_filter & tempo_sza<tempo_sza_filter;
@@ -189,6 +197,8 @@ function merge_no2(start_date, end_date, lat_bounds, lon_bounds, tempo_input_pat
         % Finding valid indices based on filters
         valid_ind_tempo = spatial_filter & qa_filter;
 
+        [~, valid_col] = ind2sub(size(spatial_filter), find(valid_ind_tempo));
+
         % Filtering Tempo data for the current scan with valid indices
         tempo_lat_merge = tempo_lat(valid_ind_tempo);
         tempo_lon_merge = tempo_lon(valid_ind_tempo);
@@ -196,7 +206,9 @@ function merge_no2(start_date, end_date, lat_bounds, lon_bounds, tempo_input_pat
         tempo_lon_corners_merge = tempo_lon_corners(:,valid_ind_tempo);
         tempo_no2_merge = tempo_no2(valid_ind_tempo);
         tempo_no2_u_merge = tempo_no2_u(valid_ind_tempo);
-        tempo_time_merge = tempo_time(valid_ind_tempo);
+
+        % tempo_time_merge = tempo_time(valid_ind_tempo);
+        tempo_time_merge = tempo_time(valid_col);
 
         %% Beginning Kalman Filter Process
         % Number of Tempo and Tropomi measurements to merge

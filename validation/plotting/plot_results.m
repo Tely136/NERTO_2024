@@ -106,7 +106,9 @@ function plot_results(start_date, end_date, lat_bounds, lon_bounds, input_data_p
                 if ~all(isnan(tropomi_no2(:,:,j)), 'all')
                     disp(['Tropomi Scan: ', num2str(j)])
 
-                    title = strjoin(['TROPOMI TropNO2 Column', newline, string(mean(tropomi_time(:,:,j), 'omitmissing')), 'EST']);
+                    % TODO: figure out what is wrong with the time
+                    % title = strjoin(['TROPOMI TropNO2 Column', newline, string(mean(tropomi_time(:,:,j), 'omitmissing')), 'EST']);
+                    title = 'TROPOMI TropNO2 Column'; 
                     make_map_fig(tropomi_lat(:,:,j), tropomi_lon(:,:,j), tropomi_no2(:,:,j), lat_bounds, lon_bounds, fullfile(current_fig_save_path, strjoin([string(date), '_G', num2str(j), '_', 'tropomi.png'], '')), title, cb_str, clim_no2, [], dim);
                 end
             end

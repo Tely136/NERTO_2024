@@ -5,7 +5,13 @@ tropomi_path = "C:\Users\tely1\OneDrive - The City College of New York\NERTO Dat
 merged_path = "C:\Users\tely1\OneDrive - The City College of New York\NERTO Data\merged_data";
 fig_path = "C:\Users\tely1\OneDrive - The City College of New York\NERTO Data\figs";
 
-merge_no2('20240525', '20240525', [38.75 41.3], [-77.5 -73.3], tempo_path, tropomi_path, merged_path, overwrite_on=true)
+
+% lat_bounds = [38.75 41.3];
+% lon_bounds = [-77.5 -73.3];
+
+lat_bounds = [39 40];
+lon_bounds = [-77 -76];
+merge_no2('20240525', '20240525', lat_bounds, lon_bounds, tempo_path, tropomi_path, merged_path, overwrite_on=true)
 
 
-plot_results('20240525', '20240525', [38.75 41.3], [-77.5 -73.3], merged_path, fig_path)
+plot_results('20240525', '20240525', lat_bounds, lon_bounds, merged_path, fig_path)
