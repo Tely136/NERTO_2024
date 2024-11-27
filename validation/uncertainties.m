@@ -237,10 +237,10 @@ function uncertainties(start_date, end_date, tempo_path, tropomi_path, save_data
     [tropomi_vza_binned, tropomi_u_binned_vza, tropomi_u_error_vza] = bin_data(tropomi_vza, tropomi_u, vza_bins);
     [tropomi_s_binned, tropomi_u_binned_s, tropomi_u_error_s] = bin_data(tropomi_s, tropomi_u, s_bins);
 
-    scatter_plot([tempo_sza_binned tropomi_sza_binned], [tempo_u_binned_sza tropomi_u_binned_sza], [tempo_u_error_sza, tropomi_u_error_sza], save_folder, 'sza.png', 'reg', 'NO2 Retrieval Uncertainty Against Solar Zenith Angle', {'TEMPO', 'TROPOMI'}, 'Solar Angle [degrees]', 'Uncertainty [umoles/m^2]')
-    scatter_plot([tempo_vza_binned tropomi_vza_binned], [tempo_u_binned_vza tropomi_u_binned_vza], [tempo_u_error_vza, tropomi_u_error_vza], save_folder, 'vza.png', 'reg', 'NO2 Retrieval Uncertainty Against Viewing Zenith Angle', {'TEMPO', 'TROPOMI'}, 'Viewing Angle [degrees]', 'Uncertainty [umoles/m^2]')
+    scatter_plot([tempo_sza_binned tropomi_sza_binned], [tempo_u_binned_sza tropomi_u_binned_sza], [tempo_u_error_sza, tropomi_u_error_sza], save_folder, 'sza.png', 'reg', '', {'TEMPO', 'TROPOMI'}, 'Solar Angle [degrees]', 'Uncertainty [\mumoles/m^2]', [0 70])
+    scatter_plot([tempo_vza_binned tropomi_vza_binned], [tempo_u_binned_vza tropomi_u_binned_vza], [tempo_u_error_vza, tropomi_u_error_vza], save_folder, 'vza.png', 'reg', '', {'TEMPO', 'TROPOMI'}, 'Viewing Angle [degrees]', 'Uncertainty [umoles/m^2]', [0 70])
     scatter_plot([tempo_s_binned tropomi_s_binned], [tempo_u_binned_s tropomi_u_binned_s], [tempo_u_error_s, tropomi_u_error_s], save_folder, 's.png', 'reg', 'NO2 Retrieval Uncertainty Against Against Photon Path Lenth', {'TEMPO', 'TROPOMI'}, 'sec(VZA) + sec(SZA)', 'Uncertainty [umoles/m^2]')
-    scatter_plot([tempo_f_cld_binned tropomi_f_cld_binned], [tempo_u_binned_f_cld tropomi_u_binned_f_cld], [tempo_u_error_f_cld, tropomi_u_error_f_cld], save_folder, 'f_cld.png', 'reg', 'NO2 Retrieval Uncertainty Against Cloud Fraction', {'TEMPO', 'TROPOMI'}, 'Cloud fraction', 'Uncertainty [umoles/m^2]')
+    scatter_plot([tempo_f_cld_binned tropomi_f_cld_binned], [tempo_u_binned_f_cld tropomi_u_binned_f_cld], [tempo_u_error_f_cld, tropomi_u_error_f_cld], save_folder, 'f_cld.png', 'reg', '', {'TEMPO', 'TROPOMI'}, 'Cloud fraction', 'Uncertainty [\mumoles/m^2]', [0 1], [10 45])
     scatter_plot([tempo_albedo_binned tropomi_albedo_binned], [tempo_u_binned_albedo tropomi_u_binned_albedo], [tempo_u_error_albedo, tropomi_u_error_albedo], save_folder, 'albedo.png', 'reg', 'NO2 Retrieval Uncertainty Against Surface Albedo', {'TEMPO', 'TROPOMI'}, 'Albedo', 'Uncertainty [umoles/m^2]')
 end
 
@@ -292,9 +292,10 @@ function scatter_plot(x_data, y_data, err, path, name, type, ttext, leg, xtext, 
     colors = [[0 0.4470 0.7410];...
                 [0.8500 0.3250 0.0980];...
                 [0.8500 0.3250 0.0980];];
+    % colors = ["#257180", "#FD8B51"];
 
 
-    lw = 1;
+    lw = 1.3;
     font_size = 20;
     resolution = 300;
 
@@ -312,7 +313,8 @@ function scatter_plot(x_data, y_data, err, path, name, type, ttext, leg, xtext, 
 
         switch type
             case 'reg'
-                 scatter(temp_x, temp_y, 50,  colors(i,:), 'LineWidth', lw);
+                 % scatter(temp_x, temp_y, 50,  colors(i,:), 'LineWidth', lw);
+                 plot(temp_x, temp_y, 'LineWidth', lw);
 
             case 'error'
                 errorbar(temp_x, temp_y, temp_err, "Color", colors(i,:), "LineWidth", lw, "Marker", "o", 'LineStyle', 'none');

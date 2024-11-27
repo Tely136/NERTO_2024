@@ -18,14 +18,15 @@ function fig = make_map_fig(lat, lon, param, lat_bounds, lon_bounds, fullpath,  
     font_size = 30;
     resolution = 300;
 
-    NY_counties = readgeotable('cb_2023_36_cousub_500k.shp');
-    MD_counties = readgeotable('cb_2023_24_cousub_500k.shp');
-    DC_counties = readgeotable('cb_2023_11_cousub_500k.shp');
+    US_states = readgeotable('cb_2023_us_state_500k.shp');
+    % NY_counties = readgeotable('cb_2023_36_cousub_500k.shp');
+    % MD_counties = readgeotable('cb_2023_24_cousub_500k.shp');
+    % DC_counties = readgeotable('cb_2023_11_cousub_500k.shp');
 
     if isempty(dim)
-        fig = figure('Visible','off', 'Position', [0, 0, 1200, 900]);
+        fig = figure('Visible','off', 'OuterPosition', [0, 0, 1200, 900]);
     else
-        fig = figure('Visible','off', 'Position', dim);
+        fig = figure('Visible','off', 'OuterPosition', dim);
     end
 
     usamap(lat_bounds, lon_bounds);
@@ -36,9 +37,10 @@ function fig = make_map_fig(lat, lon, param, lat_bounds, lon_bounds, fullpath,  
         surfm(lat(:,:,i), lon(:,:,i), param(:,:,i))
     end
 
-    geoshow(NY_counties, "DisplayType", "polygon", 'FaceAlpha', 0, 'LineWidth', lw);
-    geoshow(MD_counties, "DisplayType", "polygon", 'FaceAlpha', 0, 'LineWidth', lw);
-    geoshow(DC_counties, "DisplayType", "polygon", 'FaceAlpha', 0, 'LineWidth', lw);
+    geoshow(US_states, "DisplayType", "polygon", 'FaceAlpha', 0, 'LineWidth', lw);
+    % geoshow(NY_counties, "DisplayType", "polygon", 'FaceAlpha', 0, 'LineWidth', lw);
+    % geoshow(MD_counties, "DisplayType", "polygon", 'FaceAlpha', 0, 'LineWidth', lw);
+    % geoshow(DC_counties, "DisplayType", "polygon", 'FaceAlpha', 0, 'LineWidth', lw);
 
     if ~isempty(markers)
         scatterm(markers.lat, markers.lon) 
@@ -65,6 +67,8 @@ function fig = make_map_fig(lat, lon, param, lat_bounds, lon_bounds, fullpath,  
     title(title_str);
 
     fontsize(font_size, 'points')
+
+    axis equal;
 
     ax = gca;
     exportgraphics(ax, strjoin([fullpath, '.png'],''), "Resolution", resolution)

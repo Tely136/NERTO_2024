@@ -1,4 +1,4 @@
-function correlation_plot(satellite_data_input_path, pandora_data_input_path, data_output_path, fig_path, options)
+function correlation_plot2(satellite_data_input_path, pandora_data_input_path, data_output_path, fig_path, options)
     arguments
         satellite_data_input_path
         pandora_data_input_path
@@ -141,7 +141,7 @@ function correlation_plot(satellite_data_input_path, pandora_data_input_path, da
         input.x_data = x_data;
 
         filename = strjoin([site, '_correlation.png'],'');
-        create_and_save_fig_scatter_lines(input, fig_path, filename, '', {'TEMPO', 'TROPOMI', 'Merged'}, 'PANDORA tropospheric NO2 (umol/m^2)', 'Satellite tropospheric NO2 (umol/m^2)', [0 1000], []);
+        % create_and_save_fig_scatter_lines(input, fig_path, filename, '', {'TEMPO', 'TROPOMI', 'Merged'}, 'PANDORA tropospheric NO2 (umol/m^2)', 'Satellite tropospheric NO2 (umol/m^2)', [], []);
         % break
     end
 
@@ -185,22 +185,33 @@ function correlation_plot(satellite_data_input_path, pandora_data_input_path, da
                         {current_case, 'TROPOMI', tropomi_p.p1, tropomi_p.p2, tropomi_cor(1, 2)}];
 
 
+        lower_lim = 0;
+        upper_lim = 1000;
+
         input = struct;
-        input.tempo_comp = tempo_comp;
-        input.tempo_fit = tempo_fit;
-
-        input.merged_comp = merged_comp;
-        input.merged_fit = merged_fit;
-
-        input.tropomi_comp = tropomi_comp;
-        input.tropomi_fit = tropomi_fit;
-
+        input.comp = tempo_comp.TEMPO_NO2;
+        input.pandora = tempo_comp.PANDORA_NO2;
+        input.fit = tempo_fit;
         input.x_data = x_data;
+        filename = strjoin([current_case, '_tempo_correlation.png'],'');
+        create_and_save_fig_scatter_lines(input, fig_path, filename, '', [], 'PANDORA tropospheric NO2 (umol/m^2)', 'TEMPO tropospheric NO2 (umol/m^2)', [lower_lim upper_lim], [lower_lim upper_lim], []);
 
-        lims = [[0 500];[0 1000]; [0 1000]];
+        input = struct;
+        input.comp = merged_comp.Merged_NO2;
+        input.pandora = merged_comp.PANDORA_NO2;
+        input.fit = merged_fit;
+        input.x_data = x_data;
+        filename = strjoin([current_case, '_merged_correlation.png'],'');
+        create_and_save_fig_scatter_lines(input, fig_path, filename, '', [], 'PANDORA tropospheric NO2 (umol/m^2)', 'Merged tropospheric NO2 (umol/m^2)', [lower_lim upper_lim], [lower_lim upper_lim], []);
 
-        filename = strjoin([current_case, '_correlation.png'],'');
-        create_and_save_fig_scatter_lines(input, fig_path, filename, current_case, {'Merged', 'TEMPO', 'TROPOMI'}, 'PANDORA tropospheric NO_{2} (\mumol/m^2)', 'Satellite tropospheric NO_{2} (\mumol/m^2)', lims(i,:), lims(i,:));
+        input = struct;
+        input.comp = tropomi_comp.TROPOMI_NO2;
+        input.pandora = tropomi_comp.PANDORA_NO2;
+        input.fit = tropomi_fit;
+        input.x_data = x_data;
+        filename = strjoin([current_case, '_tropomi_correlation.png'],'');
+        create_and_save_fig_scatter_lines(input, fig_path, filename, '', [], 'PANDORA tropospheric NO2 (umol/m^2)', 'TROPOMI tropospheric NO2 (umol/m^2)', [lower_lim upper_lim], [lower_lim upper_lim], []);
+
         % break
     end
 
@@ -230,7 +241,6 @@ function create_and_save_fig_scatter_lines(input, path, name, ttext, leg, xtext,
     lw = 2;
     font_size = 20;
     scatter_size = 30;
-    % scatter_size = 20;
 
     if isempty(dim)
         dim = [0, 0, 1200, 900];
@@ -238,25 +248,16 @@ function create_and_save_fig_scatter_lines(input, path, name, ttext, leg, xtext,
 
     fig = figure('Visible', 'off', 'Position', dim);
 
-    maxval = max([input.tempo_comp.TEMPO_NO2; input.tropomi_comp.TROPOMI_NO2; input.merged_comp.Merged_NO2; input.tempo_comp.PANDORA_NO2; input.tropomi_comp.PANDORA_NO2; input.merged_comp.PANDORA_NO2]);
-    xlim([0 maxval]);
-    ylim([0 maxval]);
+    xlim([xbound(1), xbound(2)]);
+    ylim([ybound(1), ybound(2)]);
 
 
     hold on;
     % Scatter plots
-    scatter(input.merged_comp.PANDORA_NO2, input.merged_comp.Merged_NO2, scatter_size, colors(3,:), 'LineWidth', lw);
-    scatter(input.tempo_comp.PANDORA_NO2, input.tempo_comp.TEMPO_NO2, scatter_size, colors(1,:), 'LineWidth', lw);
-    scatter(input.tropomi_comp.PANDORA_NO2, input.tropomi_comp.TROPOMI_NO2, scatter_size, colors(2,:), 'LineWidth', lw);
-
-    % scatter(input.merged_comp.PANDORA_NO2, input.merged_comp.Merged_NO2, scatter_size, colors(3,:), 'filled');
-    % scatter(input.tempo_comp.PANDORA_NO2, input.tempo_comp.TEMPO_NO2, scatter_size, colors(1,:), 'filled');
-    % scatter(input.tropomi_comp.PANDORA_NO2, input.tropomi_comp.TROPOMI_NO2, scatter_size, colors(2,:), 'filled');
+    scatter(input.pandora, input.comp, scatter_size, colors(3,:), 'LineWidth', lw);
 
     % Linear fit lines
-    plot(input.x_data, input.merged_fit, 'Color', colors(3,:), 'LineWidth', lw);
-    plot(input.x_data, input.tempo_fit, 'Color', colors(1,:), 'LineWidth', lw);
-    plot(input.x_data, input.tropomi_fit, 'Color', colors(2,:), 'LineWidth', lw);
+    plot(input.x_data, input.fit, 'Color', colors(3,:), 'LineWidth', lw);
 
     plot(sort(input.x_data), sort(input.x_data), 'Color', [0,0,0,0.5], 'LineStyle', '--', 'LineWidth', lw);
 

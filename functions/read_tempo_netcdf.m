@@ -43,6 +43,7 @@ function tempo_data = read_tempo_netcdf(file, rows, cols)
             tempo_data.qa = qa;
 
             % Geolocation
+            mirror_step = ncread(filename, 'mirror_step', start_col, col_inc);
             lat = ncread(filename, '/geolocation/latitude', [start_row, start_col], [row_inc, col_inc]);
             lon = ncread(filename, '/geolocation/longitude', [start_row, start_col], [row_inc, col_inc]);
             lat_corners = ncread(filename, '/geolocation/latitude_bounds', [1 start_row, start_col], [4 row_inc, col_inc]);
@@ -52,6 +53,7 @@ function tempo_data = read_tempo_netcdf(file, rows, cols)
             time = ncread(filename, '/geolocation/time', start_col, col_inc); 
             time = datetime(time, 'ConvertFrom', 'epochtime', 'Epoch', '1980-01-06', 'TimeZone', 'UTC');
             
+            tempo_data.mirror_step = mirror_step;
             tempo_data.lat = lat;
             tempo_data.lon = lon;
             tempo_data.lat_corners = lat_corners;

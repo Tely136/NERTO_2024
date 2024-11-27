@@ -62,10 +62,10 @@ function plot_results(start_date, end_date, lat_bounds, lon_bounds, input_data_p
 
                 scan = ncread(file, 'scan');
 
-                tempo_no2(~tempo_valid_ind) = NaN;
+                % tempo_no2(~tempo_valid_ind) = NaN;
                 % tempo_no2_u(~tempo_valid_ind) = NaN;
 
-                tropomi_no2(~tropomi_valid_ind) = NaN;
+                % tropomi_no2(~tropomi_valid_ind) = NaN;
                 % tropomi_no2_u(~tropomi_valid_ind) = NaN;
 
                 disp(['Tempo Scan: ', num2str(scan)])
