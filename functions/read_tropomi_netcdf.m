@@ -62,7 +62,7 @@ function tropomi_data = read_tropomi_netcdf(file, rows, cols)
             tropomi_data.no2_strat = no2_strat;
 
             % Input Data
-            f_cld = ncread(filename, '/PRODUCT/SUPPORT_DATA/INPUT_DATA//cloud_fraction_crb', [start_row, start_col 1], [row_inc, col_inc 1]);
+            f_cld = ncread(filename, '/PRODUCT/SUPPORT_DATA/INPUT_DATA/cloud_fraction_crb', [start_row, start_col 1], [row_inc, col_inc 1]);
             albedo = ncread(filename, '/PRODUCT/SUPPORT_DATA/INPUT_DATA/surface_albedo_nitrogendioxide_window', [start_row, start_col 1], [row_inc, col_inc 1]);
             surf_type = ncread(filename, '/PRODUCT/SUPPORT_DATA/INPUT_DATA/surface_classification', [start_row, start_col 1], [row_inc, col_inc 1]);
 
