@@ -1,3 +1,5 @@
 .vscode/.MATLABDriveTag
 .vscode/settings.json
 *.MATLABDriveTag
+*.asv
+validation/time_series_data/*

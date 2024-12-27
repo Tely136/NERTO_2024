@@ -54,17 +54,12 @@ function time_series(data_input_folder, data_save_path, variable_names, distance
     f_name = f_name(end);
     f = waitbar(0, char(strjoin(["Creating",f_name])));
 
+    % find way to avoid using a counter and make this a parallel loop
     counter = 1;
-    for i = 1:size(files,1)
-        % percent = i./n_files * 100;
-        % disp([num2str(percent), '%'])
-    
+    for i = 1:size(files,1)    
         filepath = fullfile(files(i).folder, files(i).name);
-    
         new_processed_files(i) = filepath;
 
-        % lat, then lon
-        % atleast one more variable after that
         lat = ncread(filepath, variable_names(1));
         lon = ncread(filepath, variable_names(2));
     
@@ -74,8 +69,6 @@ function time_series(data_input_folder, data_save_path, variable_names, distance
 
         n_pixels = length(find(ind));
 
-        % need to handle time or other variables with different size than
-        % lat and lon
         if n_pixels > 0
             temp_data = NaN(n_pixels,n_vars);
             temp_data(:,1) = lat(ind);

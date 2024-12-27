@@ -1,7 +1,7 @@
 function parse_pandora(data_input_path, data_save_path)
 
-    varnames = {'Site', 'Date', 'NO2', 'qa'};
-    vartypes = {'string', 'datetime', 'double', 'double'};
+    varnames = {'Date', 'NO2', 'qa'};
+    vartypes = {'datetime', 'double', 'double'};
     % Initialize or load the existing data table
     if ~exist(data_save_path, "file")
         pandora_data = table('Size', [0, length(varnames)], 'VariableNames', varnames, 'VariableTypes', vartypes);
@@ -10,14 +10,8 @@ function parse_pandora(data_input_path, data_save_path)
         load(data_save_path) %#ok<LOAD>
     end
 
-    % Extract the site name from the file path
-    site = strsplit(data_input_path, '/'); 
-    site = strsplit(string(site(end)), '_'); 
-    site = erase(string(site(end)), '.txt');
-
-    % Find the number of existing entries for the site and determine lines to skip
-    site_table = pandora_data(strcmp(pandora_data.Site, site), :);
-    skip_lines = size(site_table, 1);
+    % Find the number of existing entries for the table and determine lines to skip
+    skip_lines = size(pandora_data, 1);
 
     % Initialize arrays to store new data
     dates = NaT(0,1, 'TimeZone', 'UTC');
@@ -68,11 +62,9 @@ function parse_pandora(data_input_path, data_save_path)
 
     fclose(fid);
 
-    % Create an array for the site names
-    site_arr = repmat(site, size(dates));
 
     % Create a new table with the new data
-    temp_table = table(site_arr, dates, no2_trop, qa_values, 'VariableNames', varnames);
+    temp_table = table(dates, no2_trop, qa_values, 'VariableNames', varnames);
     temp_table.Date.TimeZone = 'UTC';
 
     % Append the new data to the existing data table

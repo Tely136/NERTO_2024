@@ -17,8 +17,6 @@ distance_threshold = 5; % km
 ccny_coords = [40.8153, -73.9505];
 time_series(tempo_input_folder, 'C:\NERTO_drive\time_series_data\tempo_ccny.mat', tempo_vars, distance_threshold, ccny_coords)
 time_series(tropomi_input_folder, 'C:\NERTO_drive\time_series_data\tropomi_ccny.mat', tropomi_vars, distance_threshold, ccny_coords)
-% time_series('F:\testing_data\TEMPO_data', 'F:\testing_data\time_series\tempo_ccny.mat', tempo_vars, distance_threshold, ccny_coords)
-% time_series('F:\testing_data\TROPOMI_data', 'F:\testing_data\time_series\tropomi_ccny.mat', tropomi_vars, distance_threshold, ccny_coords)
 
 % NYBG
 nybg_coords = [40.8679, -73.8781];
@@ -44,3 +42,10 @@ time_series(tropomi_input_folder, 'C:\NERTO_drive\time_series_data\tropomi_essex
 greenbelt_coords = [38.9926, -76.8396];
 time_series(tempo_input_folder, 'C:\NERTO_drive\time_series_data\tempo_greenbelt.mat', tempo_vars, distance_threshold, greenbelt_coords)
 time_series(tropomi_input_folder, 'C:\NERTO_drive\time_series_data\tropomi_greenbelt.mat', tropomi_vars, distance_threshold, greenbelt_coords)
+
+copyfile('C:\NERTO_drive\time_series_data\tempo_greenbelt.mat', 'C:\NERTO_drive\time_series_data\tempo_greenbelt2.mat')
+copyfile('C:\NERTO_drive\time_series_data\tempo_greenbelt.mat', 'C:\NERTO_drive\time_series_data\tempo_greenbelt32.mat')
+copyfile('C:\NERTO_drive\time_series_data\tropomi_greenbelt.mat', 'C:\NERTO_drive\time_series_data\tropomi_greenbelt2.mat')
+copyfile('C:\NERTO_drive\time_series_data\tropomi_greenbelt.mat', 'C:\NERTO_drive\time_series_data\tropomi_greenbelt32.mat')
+
+% DC

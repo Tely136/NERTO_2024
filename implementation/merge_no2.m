@@ -232,14 +232,6 @@ function merge_no2(start_date, end_date, lat_bounds, lon_bounds, tempo_input_pat
                 tempo_no2_merge = tempo_no2(valid_ind_tempo);
                 tempo_no2_u_merge = tempo_no2_u(valid_ind_tempo);
                 tempo_time_merge = tempo_time(tempo_time_ind);
-        
-                % tempo_lat_merge = tempo_lat(tempo_subset_rows,tempo_subset_cols,:);
-                % tempo_lon_merge = tempo_lon(tempo_subset_rows,tempo_subset_cols,:);
-                % tempo_lat_corners_merge = tempo_lat_corners(:,tempo_subset_rows,tempo_subset_cols,:);
-                % tempo_lon_corners_merge = tempo_lon_corners(:,tempo_subset_rows,tempo_subset_cols,:);
-                % tempo_no2_merge = tempo_no2(tempo_subset_rows,tempo_subset_cols,:);
-                % tempo_no2_u_merge = tempo_no2_u(tempo_subset_rows,tempo_subset_cols,:);
-                % tempo_time_merge = tempo_time(tempo_subset_cols);
 
 
                 %% Beginning Kalman Filter Process
@@ -336,6 +328,7 @@ function merge_no2(start_date, end_date, lat_bounds, lon_bounds, tempo_input_pat
                     Pa = gather(Pa);
                 end
         
+                % TODO: fix this averaging because its not correct 
                 analysis_no2(valid_ind_tempo) = mean([Xa analysis_no2(valid_ind_tempo)],2, 'omitnan');
                 analysis_no2_u(valid_ind_tempo) = mean([diag(Pa) analysis_no2_u(valid_ind_tempo)],2, 'omitnan');
                 tempo_valid_ind(valid_ind_tempo) = 1;
@@ -365,18 +358,23 @@ function merge_no2(start_date, end_date, lat_bounds, lon_bounds, tempo_input_pat
                 end
                 n_trop_scans = size(trop_files_day,1);
 
-                nccreate(save_path, '/tempo/tempo_no2', 'Dimensions', {"rows", tempo_dim(1), "cols", tempo_dim(2)}, 'Format','netcdf4');
-                nccreate(save_path, '/tempo/tempo_no2_u', 'Dimensions', {"rows", tempo_dim(1), "cols", tempo_dim(2)}, 'Format','netcdf4');
-                nccreate(save_path, '/tempo/tempo_lat', 'Dimensions', {"rows", tempo_dim(1), "cols", tempo_dim(2)}, 'Format','netcdf4');
-                nccreate(save_path, '/tempo/tempo_lon', 'Dimensions', {"rows", tempo_dim(1), "cols", tempo_dim(2)}, 'Format','netcdf4');
-                nccreate(save_path, '/tempo/tempo_time', 'Dimensions', {"cols", tempo_dim(2)}, 'Format','netcdf4');
+                % TODO: find way to save tempo scan identifier and
+                % filenames of tropomi files used in merge so they can be
+                % compared later without having to save input data in
+                % merged files
+
+                % nccreate(save_path, '/tempo/tempo_no2', 'Dimensions', {"rows", tempo_dim(1), "cols", tempo_dim(2)}, 'Format','netcdf4');
+                % nccreate(save_path, '/tempo/tempo_no2_u', 'Dimensions', {"rows", tempo_dim(1), "cols", tempo_dim(2)}, 'Format','netcdf4');
+                % nccreate(save_path, '/tempo/tempo_lat', 'Dimensions', {"rows", tempo_dim(1), "cols", tempo_dim(2)}, 'Format','netcdf4');
+                % nccreate(save_path, '/tempo/tempo_lon', 'Dimensions', {"rows", tempo_dim(1), "cols", tempo_dim(2)}, 'Format','netcdf4');
+                % nccreate(save_path, '/tempo/tempo_time', 'Dimensions', {"cols", tempo_dim(2)}, 'Format','netcdf4');
                 nccreate(save_path, '/tempo/tempo_valid_ind', 'Dimensions', {"rows", tempo_dim(1), "cols", tempo_dim(2)}, 'Format','netcdf4');
 
-                nccreate(save_path, '/tropomi/tropomi_no2', 'Dimensions', {"rows", trop_dim(1), "cols", trop_dim(2), "scans", n_trop_scans}, 'Format','netcdf4');
-                nccreate(save_path, '/tropomi/tropomi_no2_u', 'Dimensions', {"rows", trop_dim(1), "cols", trop_dim(2), "scans", n_trop_scans}, 'Format','netcdf4');
-                nccreate(save_path, '/tropomi/tropomi_lat', 'Dimensions', {"rows", trop_dim(1), "cols", trop_dim(2), "scans", n_trop_scans}, 'Format','netcdf4');
-                nccreate(save_path, '/tropomi/tropomi_lon', 'Dimensions', {"rows", trop_dim(1), "cols", trop_dim(2), "scans", n_trop_scans}, 'Format','netcdf4');
-                nccreate(save_path, '/tropomi/tropomi_time', 'Dimensions', {"cols", trop_dim(2), "scans", n_trop_scans}, 'Format','netcdf4');
+                % nccreate(save_path, '/tropomi/tropomi_no2', 'Dimensions', {"rows", trop_dim(1), "cols", trop_dim(2), "scans", n_trop_scans}, 'Format','netcdf4');
+                % nccreate(save_path, '/tropomi/tropomi_no2_u', 'Dimensions', {"rows", trop_dim(1), "cols", trop_dim(2), "scans", n_trop_scans}, 'Format','netcdf4');
+                % nccreate(save_path, '/tropomi/tropomi_lat', 'Dimensions', {"rows", trop_dim(1), "cols", trop_dim(2), "scans", n_trop_scans}, 'Format','netcdf4');
+                % nccreate(save_path, '/tropomi/tropomi_lon', 'Dimensions', {"rows", trop_dim(1), "cols", trop_dim(2), "scans", n_trop_scans}, 'Format','netcdf4');
+                % nccreate(save_path, '/tropomi/tropomi_time', 'Dimensions', {"cols", trop_dim(2), "scans", n_trop_scans}, 'Format','netcdf4');
                 nccreate(save_path, '/tropomi/tropomi_valid_ind', 'Dimensions', {"rows", trop_dim(1), "cols", trop_dim(2), "scans", n_trop_scans}, 'Format','netcdf4');
 
                 nccreate(save_path, 'analysis/analysis_no2', 'Dimensions', {"rows", tempo_dim(1), "cols", tempo_dim(2)}, 'Format','netcdf4');
@@ -384,20 +382,18 @@ function merge_no2(start_date, end_date, lat_bounds, lon_bounds, tempo_input_pat
 
                 nccreate(save_path, 'scan');
 
-                ncwrite(save_path, '/tempo/tempo_no2', tempo_no2(:,:,j))
-                ncwrite(save_path, '/tempo/tempo_no2_u', tempo_no2_u(:,:,j))
-                ncwrite(save_path, '/tempo/tempo_lat', double(tempo_lat(:,:,j)))
-                ncwrite(save_path, '/tempo/tempo_lon', double(tempo_lon(:,:,j)))
-                ncwrite(save_path, '/tempo/tempo_time', posixtime(tempo_time(:,j)))
-                % ncwrite(save_path, '/tempo/tempo_valid_ind', single(valid_ind_tempo(:,:,j)))
+                % ncwrite(save_path, '/tempo/tempo_no2', tempo_no2(:,:,j))
+                % ncwrite(save_path, '/tempo/tempo_no2_u', tempo_no2_u(:,:,j))
+                % ncwrite(save_path, '/tempo/tempo_lat', double(tempo_lat(:,:,j)))
+                % ncwrite(save_path, '/tempo/tempo_lon', double(tempo_lon(:,:,j)))
+                % ncwrite(save_path, '/tempo/tempo_time', posixtime(tempo_time(:,j)))
                 ncwrite(save_path, '/tempo/tempo_valid_ind', single(tempo_valid_ind(:,:,j)))
 
-                ncwrite(save_path, '/tropomi/tropomi_no2', trop_no2)
-                ncwrite(save_path, '/tropomi/tropomi_no2_u', trop_no2_u)
-                ncwrite(save_path, '/tropomi/tropomi_lat', double(trop_lat))
-                ncwrite(save_path, '/tropomi/tropomi_lon', double(trop_lon))
-                ncwrite(save_path, '/tropomi/tropomi_time', posixtime(trop_time(1,:,:)))
-                % ncwrite(save_path, '/tropomi/tropomi_valid_ind', single(valid_ind_trop))
+                % ncwrite(save_path, '/tropomi/tropomi_no2', trop_no2)
+                % ncwrite(save_path, '/tropomi/tropomi_no2_u', trop_no2_u)
+                % ncwrite(save_path, '/tropomi/tropomi_lat', double(trop_lat))
+                % ncwrite(save_path, '/tropomi/tropomi_lon', double(trop_lon))
+                % ncwrite(save_path, '/tropomi/tropomi_time', posixtime(trop_time(1,:,:)))
                 ncwrite(save_path, '/tropomi/tropomi_valid_ind', single(trop_valid_ind))
 
                 ncwrite(save_path, '/analysis/analysis_no2', analysis_no2(:,:,j))
