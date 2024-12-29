@@ -11,41 +11,52 @@ tropomi_vars = ["/PRODUCT/latitude", "/PRODUCT/longitude", "/PRODUCT/time", "/PR
                 "/PRODUCT/SUPPORT_DATA/GEOLOCATIONS/viewing_zenith_angle", "/PRODUCT/SUPPORT_DATA/INPUT_DATA/surface_albedo_nitrogendioxide_window", ...
                 "/PRODUCT/SUPPORT_DATA/INPUT_DATA/cloud_fraction_crb"];
 
+merged_input_folder = 'C:\NERTO_drive\merged_data_full';
+merged_vars = ["lat", "lon", "time", "/analysis/analysis_no2", "/analysis/analysis_no2_u"];
+
 distance_threshold = 5; % km
 
 % CCNY
 ccny_coords = [40.8153, -73.9505];
 time_series(tempo_input_folder, 'C:\NERTO_drive\time_series_data\tempo_ccny.mat', tempo_vars, distance_threshold, ccny_coords)
 time_series(tropomi_input_folder, 'C:\NERTO_drive\time_series_data\tropomi_ccny.mat', tropomi_vars, distance_threshold, ccny_coords)
+time_series(merged_input_folder, 'C:\NERTO_drive\time_series_data\merged_ccny.mat', merged_vars, distance_threshold, ccny_coords)
 
 % NYBG
 nybg_coords = [40.8679, -73.8781];
 time_series(tempo_input_folder, 'C:\NERTO_drive\time_series_data\tempo_nybg.mat', tempo_vars, distance_threshold, nybg_coords)
 time_series(tropomi_input_folder, 'C:\NERTO_drive\time_series_data\tropomi_nybg.mat', tropomi_vars, distance_threshold, nybg_coords)
+time_series(merged_input_folder, 'C:\NERTO_drive\time_series_data\merged_nybg.mat', merged_vars, distance_threshold, nybg_coords)
 
 % Queens College
 queens_coords = [40.7361, -73.8215];
 time_series(tempo_input_folder, 'C:\NERTO_drive\time_series_data\tempo_queens.mat', tempo_vars, distance_threshold, queens_coords)
 time_series(tropomi_input_folder, 'C:\NERTO_drive\time_series_data\tropomi_queens.mat', tropomi_vars, distance_threshold, queens_coords)
+time_series(merged_input_folder, 'C:\NERTO_drive\time_series_data\merged_queens.mat', merged_vars, distance_threshold, queens_coords)
 
 % Beltsville 
 beltsville_coords = [39.0553, -76.8783];
 time_series(tempo_input_folder, 'C:\NERTO_drive\time_series_data\tempo_beltsville.mat', tempo_vars, distance_threshold, beltsville_coords)
 time_series(tropomi_input_folder, 'C:\NERTO_drive\time_series_data\tropomi_beltsville.mat', tropomi_vars, distance_threshold, beltsville_coords)
+time_series(merged_input_folder, 'C:\NERTO_drive\time_series_data\merged_beltsville.mat', merged_vars, distance_threshold, beltsville_coords)
 
 % Essex
 essex_coords = [39.3109, -76.4745];
 time_series(tempo_input_folder, 'C:\NERTO_drive\time_series_data\tempo_essex.mat', tempo_vars, distance_threshold, essex_coords)
 time_series(tropomi_input_folder, 'C:\NERTO_drive\time_series_data\tropomi_essex.mat', tropomi_vars, distance_threshold, essex_coords)
+time_series(merged_input_folder, 'C:\NERTO_drive\time_series_data\merged_essex.mat', merged_vars, distance_threshold, essex_coords)
 
 % Greenbelt
 greenbelt_coords = [38.9926, -76.8396];
 time_series(tempo_input_folder, 'C:\NERTO_drive\time_series_data\tempo_greenbelt.mat', tempo_vars, distance_threshold, greenbelt_coords)
 time_series(tropomi_input_folder, 'C:\NERTO_drive\time_series_data\tropomi_greenbelt.mat', tropomi_vars, distance_threshold, greenbelt_coords)
+time_series(merged_input_folder, 'C:\NERTO_drive\time_series_data\merged_greenbelt.mat', merged_vars, distance_threshold, greenbelt_coords)
 
 copyfile('C:\NERTO_drive\time_series_data\tempo_greenbelt.mat', 'C:\NERTO_drive\time_series_data\tempo_greenbelt2.mat')
 copyfile('C:\NERTO_drive\time_series_data\tempo_greenbelt.mat', 'C:\NERTO_drive\time_series_data\tempo_greenbelt32.mat')
 copyfile('C:\NERTO_drive\time_series_data\tropomi_greenbelt.mat', 'C:\NERTO_drive\time_series_data\tropomi_greenbelt2.mat')
 copyfile('C:\NERTO_drive\time_series_data\tropomi_greenbelt.mat', 'C:\NERTO_drive\time_series_data\tropomi_greenbelt32.mat')
+copyfile('C:\NERTO_drive\time_series_data\merged_greenbelt.mat', 'C:\NERTO_drive\time_series_data\merged_greenbelt2.mat')
+copyfile('C:\NERTO_drive\time_series_data\merged_greenbelt.mat', 'C:\NERTO_drive\time_series_data\merged_greenbelt32.mat')
 
 % DC
