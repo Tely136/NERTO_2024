@@ -11,8 +11,8 @@ tropomi_vars = ["/PRODUCT/latitude", "/PRODUCT/longitude", "/PRODUCT/time", "/PR
                 "/PRODUCT/SUPPORT_DATA/GEOLOCATIONS/viewing_zenith_angle", "/PRODUCT/SUPPORT_DATA/INPUT_DATA/surface_albedo_nitrogendioxide_window", ...
                 "/PRODUCT/SUPPORT_DATA/INPUT_DATA/cloud_fraction_crb"];
 
-merged_input_folder = 'C:\NERTO_drive\merged_data_full';
-merged_vars = ["lat", "lon", "time", "/analysis/analysis_no2", "/analysis/analysis_no2_u"];
+merged_input_folder = 'C:\NERTO_drive\merged_data_ams';
+merged_vars = ["geolocation/latitude", "geolocation/longitude", "geolocation/time", "product/vertical_column_troposphere", "product/vertical_column_troposphere_uncertainty"];
 
 distance_threshold = 5; % km
 
@@ -60,3 +60,32 @@ copyfile('C:\NERTO_drive\time_series_data\merged_greenbelt.mat', 'C:\NERTO_drive
 copyfile('C:\NERTO_drive\time_series_data\merged_greenbelt.mat', 'C:\NERTO_drive\time_series_data\merged_greenbelt32.mat')
 
 % DC
+DC_coords = [38.9218, -77.0124];
+time_series(tempo_input_folder, 'C:\NERTO_drive\time_series_data\tempo_DC.mat', tempo_vars, distance_threshold, DC_coords)
+time_series(tropomi_input_folder, 'C:\NERTO_drive\time_series_data\tropomi_DC.mat', tropomi_vars, distance_threshold, DC_coords)
+time_series(merged_input_folder, 'C:\NERTO_drive\time_series_data\merged_DC.mat', merged_vars, distance_threshold, DC_coords)
+
+% New Brunswick
+new_brunsick_coords = [40.4622, -74.4294];
+time_series(tempo_input_folder, 'C:\NERTO_drive\time_series_data\tempo_new_brunsick.mat', tempo_vars, distance_threshold, new_brunsick_coords)
+time_series(tropomi_input_folder, 'C:\NERTO_drive\time_series_data\tropomi_new_brunsick.mat', tropomi_vars, distance_threshold, new_brunsick_coords)
+time_series(merged_input_folder, 'C:\NERTO_drive\time_series_data\merged_new_brunsick.mat', merged_vars, distance_threshold, new_brunsick_coords)
+
+% New Haven
+new_haven_coords = [41.3014, -72.9029];
+time_series(tempo_input_folder, 'C:\NERTO_drive\time_series_data\tempo_new_haven.mat', tempo_vars, distance_threshold, new_haven_coords)
+time_series(tropomi_input_folder, 'C:\NERTO_drive\time_series_data\tropomi_new_haven.mat', tropomi_vars, distance_threshold, new_haven_coords)
+time_series(merged_input_folder, 'C:\NERTO_drive\time_series_data\merged_new_haven.mat', merged_vars, distance_threshold, new_haven_coords)
+
+% Cornwall
+cornwall_coords = [41.8213, -73.2973];
+time_series(tempo_input_folder, 'C:\NERTO_drive\time_series_data\tempo_cornwall.mat', tempo_vars, distance_threshold, cornwall_coords)
+time_series(tropomi_input_folder, 'C:\NERTO_drive\time_series_data\tropomi_cornwall.mat', tropomi_vars, distance_threshold, cornwall_coords)
+time_series(merged_input_folder, 'C:\NERTO_drive\time_series_data\merged_cornwall.mat', merged_vars, distance_threshold, cornwall_coords)
+
+% Madison
+madison_coords = [41.2568, -72.5533];
+time_series(tempo_input_folder, 'C:\NERTO_drive\time_series_data\tempo_madison.mat', tempo_vars, distance_threshold, madison_coords)
+time_series(tropomi_input_folder, 'C:\NERTO_drive\time_series_data\tropomi_madison.mat', tropomi_vars, distance_threshold, madison_coords)
+time_series(merged_input_folder, 'C:\NERTO_drive\time_series_data\merged_madison.mat', merged_vars, distance_threshold, madison_coords)
+

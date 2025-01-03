@@ -24,13 +24,15 @@ function merge_no2(run_day, lat_bounds, lon_bounds, tempo_input_path, tropomi_in
     if ~overwrite_on
         processed_files = dir(fullfile(data_save_path, '*.nc'));
 
-        temp_name = processed_files.name;
-        temp_name = strsplit(temp_name,'_');
-        temp_date = string(temp_name(4));
-
-        if any(string(datetime(run_day, "Format","uuuuMMdd"))==temp_date)
-            disp('This day was already processed')
-            return
+        for i = 1:length(processed_files)
+            temp_name = processed_files(i).name;
+            temp_name = strsplit(temp_name,'_');
+            temp_date = string(temp_name(4));
+    
+            if any(string(datetime(run_day, "Format","uuuuMMdd"))==temp_date)
+                disp('This day was already processed')
+                return
+            end
         end
     end
 
@@ -53,7 +55,6 @@ function merge_no2(run_day, lat_bounds, lon_bounds, tempo_input_path, tropomi_in
     L = km2deg(30); 
 
     corr_area = ceil(2*L/km2deg(2));
-
 
     lat_is = lat_bounds(1):subset_size:lat_bounds(2);
     lon_is = lon_bounds(1):subset_size:lon_bounds(2);
@@ -138,6 +139,7 @@ function merge_no2(run_day, lat_bounds, lon_bounds, tempo_input_path, tropomi_in
     tempo_sza = NaN(tempo_dim(1), tempo_dim(2), n_scans);
     tempo_time = NaT(tempo_dim(2), n_scans, 'TimeZone', 'UTC');
     tempo_valid_ind = zeros(tempo_dim(1), tempo_dim(2), n_scans);
+    analysis_counter = NaN(tempo_dim(1), tempo_dim(2), n_scans);
 
     % Loop over Tempo scans for current day
     disp('Loading all Tempo data')
@@ -154,6 +156,8 @@ function merge_no2(run_day, lat_bounds, lon_bounds, tempo_input_path, tropomi_in
                 tempo_data_temp = read_tempo_netcdf(tempo_files_scan(k,:));
 
                 tempo_step = tempo_data_temp.mirror_step+1;
+                % tempo_step(tempo_step<0) = []; % for removing fill values
+
                 tempo_lat(:,tempo_step,j) = tempo_data_temp.lat;
                 tempo_lon(:,tempo_step,j) = tempo_data_temp.lon;
                 tempo_lat_corners(:,:,tempo_step,j) = tempo_data_temp.lat_corners;
@@ -201,8 +205,8 @@ function merge_no2(run_day, lat_bounds, lon_bounds, tempo_input_path, tropomi_in
             trop_time_merge = trop_time(trop_time_ind);
 
             % Filter for lat-lon bounds, qa, clouds, and SZA for Tempo data
-            tempo_spatial_filter = tempo_lat >= lat_minus(lat_subset) & tempo_lat <= lat_plus(lat_subset+1) ...
-                           & tempo_lon >= lon_minus(lon_subset) & tempo_lon <= lon_plus(lon_subset+1);
+            tempo_spatial_filter = tempo_lat >= lat_minus(lat_subset) & tempo_lat <= lat_plus(lat_subset+1) & ...
+                                   tempo_lon >= lon_minus(lon_subset) & tempo_lon <= lon_plus(lon_subset+1);
             
             % Finding valid indices based on filters
             valid_ind_tempo = tempo_spatial_filter & tempo_qa_filter;
@@ -217,6 +221,13 @@ function merge_no2(run_day, lat_bounds, lon_bounds, tempo_input_path, tropomi_in
             tempo_no2_merge = tempo_no2(valid_ind_tempo);
             tempo_no2_u_merge = tempo_no2_u(valid_ind_tempo);
             tempo_time_merge = tempo_time(tempo_time_ind);
+
+
+            tempo_inner_ind = tempo_lat_merge > lat_plus(lat_subset)  & tempo_lat_merge < lat_minus(lat_subset+1) & ...
+                              tempo_lon_merge > lon_plus(lon_subset) & tempo_lon_merge < lon_minus(lon_subset+1); 
+
+            tempo_inner_valid_ind = find(valid_ind_tempo); 
+            tempo_inner_valid_ind = tempo_inner_valid_ind(tempo_inner_ind);
 
 
             %% Beginning Kalman Filter Process
@@ -312,12 +323,16 @@ function merge_no2(run_day, lat_bounds, lon_bounds, tempo_input_path, tropomi_in
             end
     
             % TODO: fix this averaging because its not correct 
-            analysis_no2(valid_ind_tempo) = mean([Xa analysis_no2(valid_ind_tempo)],2, 'omitnan');
-            analysis_no2_u(valid_ind_tempo) = mean([diag(Pa) analysis_no2_u(valid_ind_tempo)],2, 'omitnan');
+            analysis_no2(valid_ind_tempo) = sum([Xa analysis_no2(valid_ind_tempo)],2, 'omitnan');
+            analysis_counter(valid_ind_tempo) = sum([ones(length(find(valid_ind_tempo)),1), analysis_counter(valid_ind_tempo)],2 ,'omitnan');
+
+            analysis_no2_u(valid_ind_tempo) = sum([diag(Pa) analysis_no2_u(valid_ind_tempo)],2, 'omitnan');
+
             tempo_valid_ind(valid_ind_tempo) = 1;
             trop_valid_ind(valid_ind_trop) = 1;
 
             progress = progress + 1;
+            clc;
             disp([num2str(100 * progress /((length(lat_is)-1) * (length(lon_is)-1))), ' %'])
 
             clear distances id_valid temp_C_vals temp_C_rows temp_C_cols
@@ -326,6 +341,8 @@ function merge_no2(run_day, lat_bounds, lon_bounds, tempo_input_path, tropomi_in
         end
     end
 
+    analysis_no2 = analysis_no2./analysis_counter;
+    analysis_no2_u = analysis_no2_u./analysis_counter;
 
     % Loop over each scan in processed data
     for j = 1:n_scans

@@ -16,6 +16,14 @@
 
 @REM curl -o "C:\NERTO_drive\PANDORA_data\pandora_DC.txt" https://data.pandonia-global-network.org/WashingtonDC/Pandora140s1/L2/Pandora140s1_WashingtonDC_L2_rnvh3p1-8.txt
 
+@REM curl -o "C:\NERTO_drive\PANDORA_data\pandora_new_brunswick.txt" https://data.ovh.pandonia-global-network.org/NewBrunswickNJ/Pandora69s1/L2/Pandora69s1_NewBrunswickNJ_L2_rnvh3p1-8.txt
+
+@REM curl -o "C:\NERTO_drive\PANDORA_data\pandora_new_haven.txt" https://data.ovh.pandonia-global-network.org/NewHavenCT/Pandora64s1/L2/Pandora64s1_NewHavenCT_L2_rnvh3p1-8.txt
+
+@REM curl -o "C:\NERTO_drive\PANDORA_data\pandora_cornwall.txt" https://data.ovh.pandonia-global-network.org/CornwallCT/Pandora179s1/L2/Pandora179s1_CornwallCT_L2_rnvh3p1-8.txt
+
+@REM curl -o "C:\NERTO_drive\PANDORA_data\pandora_madison.txt" https://data.ovh.pandonia-global-network.org/MadisonCT/Pandora186s1/L2/Pandora186s1_MadisonCT_L2_rnvh3p1-8.txt
+
 
 matlab -batch "parse_pandora('C:\NERTO_drive\PANDORA_data\pandora_ccny.txt', 'C:\NERTO_drive\PANDORA_data\ccny_pandora_data.mat');"
 
@@ -32,3 +40,11 @@ matlab -batch "parse_pandora('C:\NERTO_drive\PANDORA_data\pandora_greenbelt2.txt
 matlab -batch "parse_pandora('C:\NERTO_drive\PANDORA_data\pandora_greenbelt32.txt', 'C:\NERTO_drive\PANDORA_data\greenebelt32_pandora_data.mat');"
 
 matlab -batch "parse_pandora('C:\NERTO_drive\PANDORA_data\pandora_DC.txt', 'C:\NERTO_drive\PANDORA_data\DC_pandora_data.mat');"
+
+matlab -batch "parse_pandora('C:\NERTO_drive\PANDORA_data\pandora_new_brunswick.txt', 'C:\NERTO_drive\PANDORA_data\new_brunswick_pandora_data.mat');"
+
+matlab -batch "parse_pandora('C:\NERTO_drive\PANDORA_data\pandora_new_haven.txt', 'C:\NERTO_drive\PANDORA_data\new_haven_pandora_data.mat');"
+
+matlab -batch "parse_pandora('C:\NERTO_drive\PANDORA_data\pandora_cornwall.txt', 'C:\NERTO_drive\PANDORA_data\cornwall_pandora_data.mat');"
+
+matlab -batch "parse_pandora('C:\NERTO_drive\PANDORA_data\pandora_madison.txt', 'C:\NERTO_drive\PANDORA_data\madison_pandora_data.mat');"
