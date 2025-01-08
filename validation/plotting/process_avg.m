@@ -28,6 +28,9 @@ function [lat_grid,lon_grid,no2_interp,no2_u_interp] = process_avg(files, savena
         counter_no2 = zeros(grid_dim);
         counter_no2_u = zeros(grid_dim);
 
+        update_interp = NaN(grid_dim);
+        counter_update = zeros(grid_dim);
+
         f_name = split(savename,'\');
         f_name = f_name(end);
         f = waitbar(0, char(strjoin(["Creating",f_name])));
@@ -60,7 +63,7 @@ function [lat_grid,lon_grid,no2_interp,no2_u_interp] = process_avg(files, savena
                 cld_frac = netcdf.getVar(support_id, cld_frac_varid);
 
 
-                valid_ind = qa == 0 & sza <= 70 & vza <= 70 & cld_frac <= 0.15;
+                valid_ind = qa == 0 & sza <= 70 & vza <= 70 & cld_frac <= 0.15 & lat>=lat_bounds(1) & lat<=lat_bounds(2) & lon >= lon_bounds(1) & lon <= lon_bounds(2);
 
             elseif strcmp(dataset, 'tropomi')
                 product_id = netcdf.inqNcid(ncid, 'PRODUCT');
@@ -77,8 +80,7 @@ function [lat_grid,lon_grid,no2_interp,no2_u_interp] = process_avg(files, savena
                 no2_u = double(netcdf.getVar(product_id, no2_u_varid));
                 qa = netcdf.getVar(product_id, qa_varid); 
 
-                % valid_ind = qa >= 0.75 & lat >= lat_bounds(1) & lat <= lat_bounds(2) & lon >= lon_bounds(1) & lon <= lon_bounds(2);
-                valid_ind = qa >= 0.75;
+                valid_ind = qa >= 0.75 & lat >= lat_bounds(1) & lat <= lat_bounds(2) & lon >= lon_bounds(1) & lon <= lon_bounds(2);
 
             elseif strcmp(dataset, 'merged')
                 product_id = netcdf.inqNcid(ncid, 'product');
@@ -88,11 +90,13 @@ function [lat_grid,lon_grid,no2_interp,no2_u_interp] = process_avg(files, savena
                 lon_varid = netcdf.inqVarID(geolocation_id, 'longitude');
                 no2_varid = netcdf.inqVarID(product_id, 'vertical_column_troposphere');
                 no2_u_varid = netcdf.inqVarID(product_id, 'vertical_column_troposphere_uncertainty');
+                update_varid = netcdf.inqVarID(product_id, 'vertical_column_troposphere_update');
 
                 lat = double(netcdf.getVar(geolocation_id, lat_varid));
                 lon = double(netcdf.getVar(geolocation_id, lon_varid));
                 no2 = netcdf.getVar(product_id, no2_varid);
                 no2_u = netcdf.getVar(product_id, no2_u_varid);
+                update = netcdf.getVar(product_id, update_varid);
 
                 valid_ind = ~isnan(no2);
             end        
@@ -111,6 +115,13 @@ function [lat_grid,lon_grid,no2_interp,no2_u_interp] = process_avg(files, savena
             counter_no2(~isnan(temp_no2_interp)) = counter_no2(~isnan(temp_no2_interp)) + 1;
             counter_no2_u(~isnan(temp_no2_u_interp)) = counter_no2_u(~isnan(temp_no2_u_interp)) + 1;
 
+            if exist("update", "var")
+                F_update = scatteredInterpolant(lon(valid_ind), lat(valid_ind), update(valid_ind), 'linear', 'none');
+                temp_update_interp = F_update(lon_grid, lat_grid);
+                update_interp = sum(cat(3, update_interp, temp_update_interp), 3, 'omitnan');
+                counter_update(~isnan(temp_update_interp)) = counter_update(~isnan(temp_update_interp)) + 1;
+            end
+
             waitbar(i/length(files), f, char(strjoin(["Creating",f_name])))
         end
     
@@ -121,7 +132,14 @@ function [lat_grid,lon_grid,no2_interp,no2_u_interp] = process_avg(files, savena
         no2_interp(no2_interp<=0) = NaN;
         no2_u_interp(no2_u_interp<=0) = NaN;
 
-        save(savename, 'no2_interp','no2_u_interp','lat_grid','lon_grid') % save the lat lon and no2
+
+        if exist("update", "var")
+            update_interp(counter_update~=0) = update_interp(counter_update~=0)./counter_update(counter_update~=0);
+            update_interp(counter_update==0) = NaN;
+            save(savename, 'no2_interp','no2_u_interp','update_interp','lat_grid','lon_grid') % save the lat lon and no2
+        else
+            save(savename, 'no2_interp','no2_u_interp','lat_grid','lon_grid') % save the lat lon and no2
+        end
 
        delete(f)
     else

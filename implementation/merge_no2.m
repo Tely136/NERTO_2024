@@ -103,7 +103,7 @@ function merge_no2(run_day, lat_bounds, lon_bounds, tempo_input_path, tropomi_in
     trop_valid_ind = zeros(trop_dim(1),trop_dim(2),size(trop_files_day,1));
 
     % Loop over all Tropomi files on this day
-    disp('Loading all Tropomi data')
+    % disp('Loading all Tropomi data')
     for j = 1:size(trop_files_day,1)
         % Read the file and add contents to holding arrays
         trop_data_temp = read_tropomi_netcdf(trop_files_day(j,:));
@@ -142,7 +142,7 @@ function merge_no2(run_day, lat_bounds, lon_bounds, tempo_input_path, tropomi_in
     analysis_counter = NaN(tempo_dim(1), tempo_dim(2), n_scans);
 
     % Loop over Tempo scans for current day
-    disp('Loading all Tempo data')
+    % disp('Loading all Tempo data')
     for j = 1:n_scans
         scan = scans(j);
 
@@ -236,15 +236,15 @@ function merge_no2(run_day, lat_bounds, lon_bounds, tempo_input_path, tropomi_in
             m = numel(trop_lat_merge);
     
             % Observation (Tropomi) error covariance matrix
-            disp('Creating observation error covariance matrix')
+            % disp('Creating observation error covariance matrix')
             R = sparse(1:m,1:m,trop_no2_u_merge(:));
             
             % Background (Tempo) error covariance matrix
-            disp('Creating background error covariance matrix')
+            % disp('Creating background error covariance matrix')
             D = sparse(1:n,1:n,tempo_no2_u_merge(:));
     
             % Correlation Matrix
-            disp('Creating correlation matrix')
+            % disp('Creating correlation matrix')
 
             C = zeros(n,n);
             parfor current_ind = 1:n
@@ -270,7 +270,7 @@ function merge_no2(run_day, lat_bounds, lon_bounds, tempo_input_path, tropomi_in
             clear D C lat_grid lon_grid
     
             % Observation transformation matrix
-            disp('Calculating observation matrix')
+            % disp('Calculating observation matrix')
     
             interpolation_struct = struct;
             interpolation_struct.tempo_lat = tempo_lat_merge;
@@ -304,18 +304,15 @@ function merge_no2(run_day, lat_bounds, lon_bounds, tempo_input_path, tropomi_in
             end
     
             % Kalman Gain
-            disp('Calculating Kalman Gain matrix')
+            % disp('Calculating Kalman Gain matrix')
             K = Pb * H' / (H * Pb * H' + R);
     
             % Analysis update
-            disp('Calculating analysis update')
+            % disp('Calculating analysis update')
             Xa = tempo_no2_merge + K * (trop_no2_merge - H * tempo_no2_merge);
     
             % Analysis Error Covariance
             Pa = (eye(length(Xa)) - K * H) * Pb;
-    
-            % Prepare data for saving
-            disp('Saving data')
     
             if options.use_gpu
                 Xa = gather(Xa);
@@ -332,8 +329,8 @@ function merge_no2(run_day, lat_bounds, lon_bounds, tempo_input_path, tropomi_in
             trop_valid_ind(valid_ind_trop) = 1;
 
             progress = progress + 1;
-            clc;
-            disp([num2str(100 * progress /((length(lat_is)-1) * (length(lon_is)-1))), ' %'])
+            % clc;
+            % disp([num2str(100 * progress /((length(lat_is)-1) * (length(lon_is)-1))), ' %'])
 
             clear distances id_valid temp_C_vals temp_C_rows temp_C_cols
             clear R D C Pb K Xa Pa H
@@ -343,6 +340,9 @@ function merge_no2(run_day, lat_bounds, lon_bounds, tempo_input_path, tropomi_in
 
     analysis_no2 = analysis_no2./analysis_counter;
     analysis_no2_u = analysis_no2_u./analysis_counter;
+
+    % Prepare data for saving
+    disp('Saving data')
 
     % Loop over each scan in processed data
     for j = 1:n_scans
@@ -380,6 +380,9 @@ function merge_no2(run_day, lat_bounds, lon_bounds, tempo_input_path, tropomi_in
 
             nccreate(save_path, 'scan');
 
+            nccreate(save_path, 'product/vertical_column_troposphere_update', 'Dimensions', {"rows", tempo_dim(1), "cols", tempo_dim(2)}, 'Format','netcdf4');
+
+
             % ncwrite(save_path, '/tempo/tempo_no2', tempo_no2(:,:,j))
             % ncwrite(save_path, '/tempo/tempo_no2_u', tempo_no2_u(:,:,j))
             % ncwrite(save_path, '/tempo/tempo_lat', double(tempo_lat(:,:,j)))
@@ -394,13 +397,15 @@ function merge_no2(run_day, lat_bounds, lon_bounds, tempo_input_path, tropomi_in
             % ncwrite(save_path, '/tropomi/tropomi_time', posixtime(trop_time(1,:,:)))
             % ncwrite(save_path, '/tropomi/tropomi_valid_ind', single(trop_valid_ind))
 
-            ncwrite(save_path, 'product/vertical_column_troposphere', analysis_no2(:,:,j))
-            ncwrite(save_path, 'product/vertical_column_troposphere_uncertainty', analysis_no2_u(:,:,j))
-            ncwrite(save_path, 'geolocation/latitude', double(tempo_lat(:,:,j)))
-            ncwrite(save_path, 'geolocation/longitude', double(tempo_lon(:,:,j)))
-            ncwrite(save_path, 'geolocation/time', posixtime(tempo_time(:,j)))
+            ncwrite(save_path, 'product/vertical_column_troposphere', analysis_no2(:,:,j));
+            ncwrite(save_path, 'product/vertical_column_troposphere_uncertainty', analysis_no2_u(:,:,j));
+            ncwrite(save_path, 'geolocation/latitude', double(tempo_lat(:,:,j)));
+            ncwrite(save_path, 'geolocation/longitude', double(tempo_lon(:,:,j)));
+            ncwrite(save_path, 'geolocation/time', posixtime(tempo_time(:,j)));
 
             ncwrite(save_path, 'scan', scan)
+
+            ncwrite(save_path, 'product/vertical_column_troposphere_update', analysis_no2(:,:,j) - tempo_no2(:,:,j));
 
             disp([savename, ' saved']);
         end
