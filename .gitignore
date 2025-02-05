@@ -4,3 +4,4 @@
 *.asv
 validation/time_series_data/*
 validation/average_data/*
+*.mat

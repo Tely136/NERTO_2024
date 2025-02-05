@@ -37,12 +37,12 @@ if args.lat_min is not None and args.lat_max is not None and args.lon_min is not
 results = earthaccess.search_data(**search_params)
 
 # Calculate the number of granules and total download size
-num_granules = len(results)
-total_size_gb = sum(granule['size'] for granule in results) / (1024 ** 3)  # Size in GB
+# num_granules = len(results)
+# total_size_gb = sum(granule['size'] for granule in results) / (1024 ** 3)  # Size in GB
 
 # Display the information
-print(f'Number of granules: {num_granules}')
-print(f'Total download size: {total_size_gb:.2f} GB')
+# print(f'Number of granules: {num_granules}')
+# print(f'Total download size: {total_size_gb:.2f} GB')
 
 
 earthaccess.download(results, local_path=data_path)
